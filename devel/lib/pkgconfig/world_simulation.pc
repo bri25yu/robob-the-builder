@@ -1,0 +1,8 @@
+prefix=/home/bhavnasud/ros_workspaces/robob-the-builder/devel
+
+Name: world_simulation
+Description: Description of world_simulation
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

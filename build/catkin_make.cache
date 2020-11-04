@@ -1,0 +1,2 @@
+world_simulation
+-DCATKIN_DEVEL_PREFIX=/home/bhavnasud/ros_workspaces/robob-the-builder/devel -DCMAKE_INSTALL_PREFIX=/home/bhavnasud/ros_workspaces/robob-the-builder/install -G Unix Makefiles
