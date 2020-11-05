@@ -49,25 +49,19 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>baxter_tools</build_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>intera_interface</build_depend>
   <build_depend>moveit_msgs</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
-  <build_export_depend>baxter_tools</build_export_depend>
   <build_export_depend>geometry_msgs</build_export_depend>
-  <build_export_depend>intera_interface</build_export_depend>
   <build_export_depend>moveit_msgs</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <build_export_depend>tf2_ros</build_export_depend>
-  <exec_depend>baxter_tools</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
-  <exec_depend>intera_interface</exec_depend>
   <exec_depend>moveit_msgs</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
