@@ -1,3 +1,4 @@
 #ignore build and devel files
 build
 devel
+*.pyc
