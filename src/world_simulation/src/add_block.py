@@ -100,7 +100,7 @@ class WorldSimulation:
 
     def remove_block_gazebo(self, name):
         try:
-            delete_model = rospy.ServiceProxy('/gazebo/delete_model', DeleteModel)
+            delete_model = rospy.ServiceProxy(const.Gazebo.DELETE_MODEL, DeleteModel)
             resp_delete = delete_model(name)
         except rospy.ServiceException, e:
             print("Delete Model service call failed: {0}".format(e))
