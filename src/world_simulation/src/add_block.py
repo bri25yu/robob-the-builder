@@ -33,7 +33,7 @@ def main():
 
     block_pose = Pose(position=Point(x=1.3775, y=-.1265, z = 0))
     world_sim.add_block(block_pose)
-    # world_sim.remove_all_blocks(2)
+    # world_sim.remove_all_blocks(3)
 
 
 class WorldSimulation:
@@ -43,6 +43,7 @@ class WorldSimulation:
         moveit_commander.roscpp_initialize(sys.argv)
         self.moveit_scene = moveit_commander.PlanningSceneInterface()
         self.robot = moveit_commander.RobotCommander()
+        #TODO: later, once we add gmapping, we should be able to set both reference frames to map
         self.gazebo_reference_frame = "world"
         self.rviz_reference_frame = self.robot.get_planning_frame()
         self.num_blocks = 0
@@ -80,12 +81,12 @@ class WorldSimulation:
             The name of the block to remove.
 
         """
-        self.remove_block_gazebo(name)
+        # self.remove_block_gazebo(name)
         self.remove_block_rviz(name)
 
     #----------------------------------------------------------------------------------------------
     # Helper functions
-
+    #TODO: add support for different colors
     def initialize_block_xml(self, pack_name="world_simulation", model_dir="/models/", block_urdf_dir="block/block.urdf"):
         model_path = rospkg.RosPack().get_path(pack_name) + model_dir
         self.block_xml = ""
