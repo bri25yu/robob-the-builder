@@ -7,5 +7,5 @@ then
     source devel/setup.bash
     chmod +x src/world_simulation/src/add_block.py
 fi
-
+source devel/setup.bash
 rosrun world_simulation add_block.py

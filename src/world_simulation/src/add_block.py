@@ -25,11 +25,15 @@ import constants as const
 def main():
     world_sim = WorldSimulation()
 
-    block_pose = Pose(position=Point(x=0.4225, y=-0.1265, z=0.7725))
-    world_sim.add_block(block_pose, "world")
+    block_pose = Pose(position=Point(x=0.4225, y=-0.1265, z=0))
+    world_sim.add_block(block_pose)
 
-    block_pose = Pose(position=Point(x=1.4225, y=-0.1265, z=0.7725))
-    world_sim.add_block(block_pose, "world")
+    block_pose = Pose(position=Point(x=1.4225, y=-0.1265, z=0))
+    world_sim.add_block(block_pose)
+
+    block_pose = Pose(position=Point(x=1.3775, y=-.1265, z = 0))
+    world_sim.add_block(block_pose)
+    # world_sim.remove_all_blocks(2)
 
 
 class WorldSimulation:
@@ -38,11 +42,17 @@ class WorldSimulation:
     def __init__(self):
         moveit_commander.roscpp_initialize(sys.argv)
         self.moveit_scene = moveit_commander.PlanningSceneInterface()
-
+        self.robot = moveit_commander.RobotCommander()
+        self.gazebo_reference_frame = "world"
+        self.rviz_reference_frame = self.robot.get_planning_frame()
         self.num_blocks = 0
         self.initialize_block_xml()
 
-    def add_block(self, pose, reference_frame):
+    def remove_all_blocks(self, total):
+        for i in range(total):
+            self.remove_block("block{0}".format(i))
+
+    def add_block(self, pose):
         """
         Adds a block to both Gazebo and RViz at pose based on the block_reference_frame
 
@@ -55,9 +65,9 @@ class WorldSimulation:
 
         """
         name = "block{0}".format(self.num_blocks)
-        self.add_block_gazebo(pose, reference_frame, name)
+        self.add_block_gazebo(pose, self.gazebo_reference_frame, name)
         size = self.BLOCK_SIZE
-        self.add_block_rviz(pose, reference_frame, name, "base_link", size)
+        self.add_block_rviz(pose, self.rviz_reference_frame, name, size)
         self.num_blocks += 1
 
     def remove_block(self, name):
@@ -71,8 +81,8 @@ class WorldSimulation:
 
         """
         self.remove_block_gazebo(name)
-        self.remove_block_rviz(name, "base_link")
-            
+        self.remove_block_rviz(name)
+
     #----------------------------------------------------------------------------------------------
     # Helper functions
 
@@ -87,26 +97,26 @@ class WorldSimulation:
         try:
             spawn_urdf = rospy.ServiceProxy(const.Gazebo.SPAWN_URDF_MODEL, SpawnModel)
             resp_urdf = spawn_urdf(name, self.block_xml, "/", pose, reference_frame)
+            print("here")
         except rospy.ServiceException, e:
+            print("exception")
             rospy.logerr("Spawn URDF service call failed: {0}".format(e))
 
-    def add_block_rviz(self, pose, reference_frame, name, ref_link, size):
-        self.moveit_scene.attach_box(
-            ref_link,
-            name,
-            PoseStamped(Header(frame_id = reference_frame), pose),
-            size,
-        )
+    def add_block_rviz(self, pose, reference_frame, name, size):
+        #rospy.sleep(2)
+        pose_stamped = PoseStamped(Header(frame_id = reference_frame), pose)
+        self.moveit_scene.add_box(name, pose_stamped, size)
+
 
     def remove_block_gazebo(self, name):
         try:
             delete_model = rospy.ServiceProxy(const.Gazebo.DELETE_MODEL, DeleteModel)
-            resp_delete = delete_model(name)
-        except rospy.ServiceException, e:
+            resp_delete = delete_model(str(name))
+        except Exception, e:
             print("Delete Model service call failed: {0}".format(e))
 
-    def remove_block_rviz(self, name, ref_link):
-        self.moveit_scene.remove_attached_object(ref_link, name)
+    def remove_block_rviz(self, name):
+        self.moveit_scene.remove_world_object(name)
 
 if __name__ == "__main__":
     rospy.init_node('moveit_node')
