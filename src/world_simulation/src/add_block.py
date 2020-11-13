@@ -25,14 +25,10 @@ import constants as const
 def main():
     world_sim = WorldSimulation()
 
-    block_pose = Pose(position=Point(x=0.4225, y=-0.1265, z=0))
-    world_sim.add_block(block_pose, color=const.Colors.BLUE)
-
-    block_pose = Pose(position=Point(x=1.4225, y=-0.1265, z=0))
-    world_sim.add_block(block_pose, color=const.Colors.ORANGE)
-
-    block_pose = Pose(position=Point(x=1.3775, y=-.1265, z = 0))
-    world_sim.add_block(block_pose)
+    for d in const.TEST_STRUCTURE:
+        pose, color = d[const.El.POSE], d[const.El.COLOR]
+        block_pose = Pose(position=Point(**pose))
+        world_sim.add_block(block_pose, color=color)
     # world_sim.remove_all_blocks(3)
 
 
