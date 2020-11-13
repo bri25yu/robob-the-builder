@@ -26,10 +26,10 @@ def main():
     world_sim = WorldSimulation()
 
     block_pose = Pose(position=Point(x=0.4225, y=-0.1265, z=0))
-    world_sim.add_block(block_pose)
+    world_sim.add_block(block_pose, color=const.Colors.BLUE)
 
     block_pose = Pose(position=Point(x=1.4225, y=-0.1265, z=0))
-    world_sim.add_block(block_pose)
+    world_sim.add_block(block_pose, color=const.Colors.ORANGE)
 
     block_pose = Pose(position=Point(x=1.3775, y=-.1265, z = 0))
     world_sim.add_block(block_pose)
@@ -38,6 +38,8 @@ def main():
 
 class WorldSimulation:
     BLOCK_SIZE = (0.045, 0.045, 0.045)
+    BLOCK_DEFAULT_COLOR = "<material>Gazebo/Red</material>"
+    BLOCK_COLOR_TEMPLATE = "<material>Gazebo/{}</material>"
 
     def __init__(self):
         moveit_commander.roscpp_initialize(sys.argv)
@@ -53,7 +55,7 @@ class WorldSimulation:
         for i in range(total):
             self.remove_block("block{0}".format(i))
 
-    def add_block(self, pose):
+    def add_block(self, pose, color=None):
         """
         Adds a block to both Gazebo and RViz at pose based on the block_reference_frame
 
@@ -61,12 +63,12 @@ class WorldSimulation:
         ----------
         pose: Pose
             The pose of the block to place.
-        reference_frame: str
-            The name of the reference frame to place the block.
+        color: str
+            The color of the block.
 
         """
         name = "block{0}".format(self.num_blocks)
-        self.add_block_gazebo(pose, self.gazebo_reference_frame, name)
+        self.add_block_gazebo(pose, self.gazebo_reference_frame, name, color=color)
         size = self.BLOCK_SIZE
         self.add_block_rviz(pose, self.rviz_reference_frame, name, size)
         self.num_blocks += 1
@@ -93,14 +95,16 @@ class WorldSimulation:
         with open (model_path + block_urdf_dir, "r") as block_file:
             self.block_xml = block_file.read().replace('\n', '')
 
-    def add_block_gazebo(self, pose, reference_frame, name):
+    def add_block_gazebo(self, pose, reference_frame, name, color=None):
+        colored_xml = self.block_xml
+        if color is not None:
+            colored_xml = self.block_xml.replace(self.BLOCK_DEFAULT_COLOR, self.BLOCK_COLOR_TEMPLATE.format(color))
+
         rospy.wait_for_service(const.Gazebo.SPAWN_URDF_MODEL)
         try:
             spawn_urdf = rospy.ServiceProxy(const.Gazebo.SPAWN_URDF_MODEL, SpawnModel)
-            resp_urdf = spawn_urdf(name, self.block_xml, "/", pose, reference_frame)
-            print("here")
+            resp_urdf = spawn_urdf(name, colored_xml, "/", pose, reference_frame)
         except rospy.ServiceException, e:
-            print("exception")
             rospy.logerr("Spawn URDF service call failed: {0}".format(e))
 
     def add_block_rviz(self, pose, reference_frame, name, size):
