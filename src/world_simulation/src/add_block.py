@@ -23,7 +23,9 @@ import constants as const
 
 
 def main():
+    print("Initializing")
     world_sim = WorldSimulation()
+    print("Finished initializing")
 
     for d in const.TEST_STRUCTURE:
         pose, color = d[const.El.POSE], d[const.El.COLOR]
