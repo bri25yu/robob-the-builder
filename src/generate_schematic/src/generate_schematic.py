@@ -13,16 +13,15 @@ IMAGE_IN_PATH = "images/gazebo_image_two.jpg"
 IMAGE_OUT_NAME = "gazebo_image_two_clustering.jpg"
 def main():
     g = GenerateSchematic()
-
     img = g.get_image(IMAGE_IN_PATH)
-    NUM_CLUSTERS = 11
-    segmented, clustered_segments = g.segment(img, segmentation_method=Segmentation.cluster_segment, n_clusters=NUM_CLUSTERS)
-    for i, segment in enumerate(clustered_segments):
-        g.save_image(segment, IMAGE_OUT_NAME + "_" + str(i) + ".jpg")
-    # segmented = (segmented * (255 / (NUM_CLUSTERS-1))).astype(np.uint8)
-    # segmented = g.segment(img, segmentation_method=Segmentation.edge_detect_canny)
-    g.save_image(segmented, IMAGE_OUT_NAME)
+    bottom_left_coordinates = g.find_all_bottom_left_coordinates(img)
 
+    #display an image with bottom left coordinates highlighted in white
+    for coordinates in bottom_left_coordinates:
+        cv2.circle(img, coordinates, 3, (255, 255, 255), -1)
+    cv2.imshow("BottomLeftCoordinates", img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 class GenerateSchematic:
 
@@ -58,18 +57,82 @@ class GenerateSchematic:
         Parameters
         ----------
         img : np.ndarray
-            The image to perform edge detection on.
+            The image to perform segmentation on.
 
         Returns
         -------
         edge_detected : np.ndarray
-            The input image with edge detection performed.
+            The input image with segmentation performed.
 
         """
         if segmentation_method is None:
             segmentation_method = Segmentation.edge_detect_canny
 
         return segmentation_method(img, **kwargs)
+
+    def find_image_bottom_left_coordinates(self, img):
+        """
+        Parameters
+        ----------
+        img : np.ndarray
+            Image with blocks to find bottom left block coordinates from.
+            The blocks in the image should all be the same color.
+
+        Returns
+        -------
+        results : np.ndarray
+            An array of bottom left block coordinates in the image
+
+        """
+        #convert to grayscale and threshold so blocks appear white
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        _, binary = cv2.threshold(gray, 15, 255, cv2.THRESH_BINARY)
+
+        #find contours of blocks
+        _, contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        #loop through contours and find bottom left coordinates
+        results = []
+        for contour in contours:
+            #note, min_x and max_x are in image coordinates (so x increases to the right and y increases downwards)
+            min_x = np.min(contour[:, 0, 0])
+            max_y = np.max(contour[:, 0, 1])
+            results.append((min_x, max_y))
+        return results
+
+    def find_all_bottom_left_coordinates(self, img):
+        """
+        Parameters
+        ----------
+        img : np.ndarray
+            Image with blocks to find bottom left block coordinates from.
+            The blocks may be different colors.
+
+        Returns
+        -------
+        results : np.ndarray
+            An array of bottom left block coordinates in the image
+        """
+
+        #perform clustering to divide image into groups of the same color
+        NUM_CLUSTERS = 11
+        segmented, clustered_segments, labels_bincount = self.segment(img, segmentation_method=Segmentation.cluster_segment, n_clusters=NUM_CLUSTERS)
+        for i, segment in enumerate(clustered_segments):
+            #save each cluster to a separate image
+            self.save_image(segment, IMAGE_OUT_NAME + "_" + str(i) + ".jpg")
+        #labels_bincount represents the number of pixels in each cluster
+        total_labels = sum(labels_bincount)
+        bottom_left_coordinates = []
+        for i in range(NUM_CLUSTERS):
+            percent_data = labels_bincount[i]/float(total_labels)
+            #if this is a cluster we want to look at
+            #(has percent_data within a certain range, indicating that the cluster has boxes)
+            if percent_data > .001 and percent_data < .5:
+                #read image and find its bottom left block coordinates
+                path_to_image = "images/" + IMAGE_OUT_NAME + "_" + str(i) + ".jpg"
+                image_bottom_left_coordinates = self.find_image_bottom_left_coordinates(self.get_image(path_to_image))
+                bottom_left_coordinates.extend(image_bottom_left_coordinates)
+        return bottom_left_coordinates
 
 
 class Segmentation:
@@ -122,9 +185,6 @@ class Segmentation:
         reshapedImage = np.float32(originalImage.reshape(-1, 3))
         stopCriteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.1)
         ret, labels, clusters = cv2.kmeans(reshapedImage, n_clusters, None, stopCriteria, 10, cv2.KMEANS_RANDOM_CENTERS)
-        print("labels", np.bincount(labels.flatten()))
-        print("ret", ret)
-        print("clusters", clusters.shape)
         clusters = np.uint8(clusters)
         intermediateImage = clusters[labels.flatten()]
         clusteredImage = intermediateImage.reshape((originalImage.shape))
@@ -134,49 +194,11 @@ class Segmentation:
             new_image = reshapedImage * (labels == i)
             new_image = new_image.reshape((originalImage.shape))
             clusteredSegments.append(new_image)
-        return clusteredImage, clusteredSegments
-        # Downsample img by a factor of 2 first using the mean to speed up K-means
-        # img_d = cv2.resize(img, dsize=(img.shape[1]/2, img.shape[0]/2), interpolation=cv2.INTER_NEAREST)
-        # # img_d = img
-        #
-        # # first convert our 3-dimensional img_d array to a 2-dimensional array
-        # # whose shape will be (length * width, number of channels) hint: use img_d.shape
-        # img_r = np.reshape(img_d, (img_d.shape[0] * img_d.shape[1], img_d.shape[2]))
-        #
-        # # Fit the k-means algorithm on this reshaped array img_r using the the do_kmeans function defined above.
-        # clusters = Segmentation._do_kmeans(img_r, n_clusters)
-        # print(clusters.shape)
-        # # reshape this clustered image to the original downsampled image (img_d) shape
-        # cluster_img = np.reshape(img_r, img_d.shape)
-        #
-        # # Upsample the image back to the original image (img) using nearest interpolation
-        # img_u = cv2.resize(src=cluster_img, dsize=(img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
-        # # img_u = cluster_img
-        #
-        # # return img_u.astype(np.uint8)
-        # return cluster_img
+        return clusteredImage, clusteredSegments, np.bincount(labels.flatten())
 
     #----------------------------------------------------------------------------------------------
     # Helpers
 
-    @staticmethod
-    def _do_kmeans(data, n_clusters):
-        """Uses opencv to perform k-means clustering on the data given. Clusters it into
-        n_clusters clusters.
-
-        Args:
-            data: ndarray of shape (n_datapoints, dim)
-            n_clusters: int, number of clusters to divide into.
-
-        Returns:
-            clusters: integer array of length n_datapoints. clusters[i] is
-            a number in range(n_clusters) specifying which cluster data[i]
-            was assigned to.
-        """
-        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2)
-        _, clusters, centers = kmeans = cv2.kmeans(data.astype(np.float32), n_clusters, bestLabels=None, criteria=criteria, attempts=1, flags=cv2.KMEANS_RANDOM_CENTERS)
-        print(centers)
-        return clusters
 
 
 if __name__ == "__main__":

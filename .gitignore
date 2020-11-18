@@ -2,7 +2,6 @@
 build
 devel
 *.pyc
-/images
 
 .catkin_tools
 logs
