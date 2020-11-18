@@ -16,8 +16,11 @@ def main():
 
     img = g.get_image(IMAGE_IN_PATH)
     NUM_CLUSTERS = 11
-    segmented = g.segment(img, segmentation_method=Segmentation.cluster_segment, n_clusters=NUM_CLUSTERS)
+    segmented, clustered_segments = g.segment(img, segmentation_method=Segmentation.cluster_segment, n_clusters=NUM_CLUSTERS)
+    for i, segment in enumerate(clustered_segments):
+        g.save_image(segment, IMAGE_OUT_NAME + "_" + str(i) + ".jpg")
     # segmented = (segmented * (255 / (NUM_CLUSTERS-1))).astype(np.uint8)
+    # segmented = g.segment(img, segmentation_method=Segmentation.edge_detect_canny)
     g.save_image(segmented, IMAGE_OUT_NAME)
 
 
@@ -67,7 +70,7 @@ class GenerateSchematic:
             segmentation_method = Segmentation.edge_detect_canny
 
         return segmentation_method(img, **kwargs)
-    
+
 
 class Segmentation:
 
@@ -88,8 +91,13 @@ class Segmentation:
             gray_img with edges outlined
         """
         gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        edges = cv2.Canny(gray_img, min_val, max_val)
+        sigma = .33
+        v = np.median(gray_img)
 
+        #---- apply automatic Canny edge detection using the computed median----
+        lower = int(max(0, (1.0 - sigma) * v))
+        upper = int(min(255, (1.0 + sigma) * v))
+        edges = cv2.Canny(gray_img, lower, upper)
         return edges
 
     @staticmethod
@@ -110,25 +118,43 @@ class Segmentation:
         ndarray
             clusters of gray_img represented with similar pixel values
         """
+        originalImage = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        reshapedImage = np.float32(originalImage.reshape(-1, 3))
+        stopCriteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.1)
+        ret, labels, clusters = cv2.kmeans(reshapedImage, n_clusters, None, stopCriteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+        print("labels", np.bincount(labels.flatten()))
+        print("ret", ret)
+        print("clusters", clusters.shape)
+        clusters = np.uint8(clusters)
+        intermediateImage = clusters[labels.flatten()]
+        clusteredImage = intermediateImage.reshape((originalImage.shape))
+
+        clusteredSegments = []
+        for i in range(n_clusters):
+            new_image = reshapedImage * (labels == i)
+            new_image = new_image.reshape((originalImage.shape))
+            clusteredSegments.append(new_image)
+        return clusteredImage, clusteredSegments
         # Downsample img by a factor of 2 first using the mean to speed up K-means
         # img_d = cv2.resize(img, dsize=(img.shape[1]/2, img.shape[0]/2), interpolation=cv2.INTER_NEAREST)
-        img_d = img
-
-        # first convert our 3-dimensional img_d array to a 2-dimensional array
-        # whose shape will be (length * width, number of channels) hint: use img_d.shape
-        img_r = np.reshape(img_d, (img_d.shape[0] * img_d.shape[1], img_d.shape[2]))
-        
-        # Fit the k-means algorithm on this reshaped array img_r using the the do_kmeans function defined above.
-        clusters = Segmentation._do_kmeans(img_r, n_clusters)
-
-        # reshape this clustered image to the original downsampled image (img_d) shape
-        cluster_img = np.reshape(img_r, img_d.shape)
-
-        # Upsample the image back to the original image (img) using nearest interpolation
+        # # img_d = img
+        #
+        # # first convert our 3-dimensional img_d array to a 2-dimensional array
+        # # whose shape will be (length * width, number of channels) hint: use img_d.shape
+        # img_r = np.reshape(img_d, (img_d.shape[0] * img_d.shape[1], img_d.shape[2]))
+        #
+        # # Fit the k-means algorithm on this reshaped array img_r using the the do_kmeans function defined above.
+        # clusters = Segmentation._do_kmeans(img_r, n_clusters)
+        # print(clusters.shape)
+        # # reshape this clustered image to the original downsampled image (img_d) shape
+        # cluster_img = np.reshape(img_r, img_d.shape)
+        #
+        # # Upsample the image back to the original image (img) using nearest interpolation
         # img_u = cv2.resize(src=cluster_img, dsize=(img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
-        img_u = cluster_img
-
-        return img_u.astype(np.uint8)
+        # # img_u = cluster_img
+        #
+        # # return img_u.astype(np.uint8)
+        # return cluster_img
 
     #----------------------------------------------------------------------------------------------
     # Helpers
@@ -145,11 +171,11 @@ class Segmentation:
         Returns:
             clusters: integer array of length n_datapoints. clusters[i] is
             a number in range(n_clusters) specifying which cluster data[i]
-            was assigned to. 
+            was assigned to.
         """
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.2)
         _, clusters, centers = kmeans = cv2.kmeans(data.astype(np.float32), n_clusters, bestLabels=None, criteria=criteria, attempts=1, flags=cv2.KMEANS_RANDOM_CENTERS)
-
+        print(centers)
         return clusters
 
 
