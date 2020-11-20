@@ -15,6 +15,7 @@ from geometry_msgs.msg import (
     PoseStamped,
     Pose,
     Point,
+    Quaternion,
 )
 from std_msgs.msg import Header
 
@@ -27,7 +28,10 @@ import utils as utils
 def main():
     world_sim = WorldSimulation()
 
-    world_sim.add_square_2d(2, 0, 3)
+    x, y = 2, 0
+    world_sim.add_square_2d(x, y, 3)
+    world_sim.add_camera((x, y, 1), (0, np.pi / 2, 0), "camera0")  # top down camera
+    world_sim.add_camera((x - 1, y, 0), (0, 0, 0), "camera1")  # side view camera
 
 
 class WorldSimulation:
@@ -41,6 +45,13 @@ class WorldSimulation:
     BLOCK_MASS_END_FLAG = "/>"
     BLOCK_DEFAULT_ORIGIN = '<origin xyz="0.0 0.0 0.0" />'
     BLOCK_ORIGIN_TEMPLATE = '<origin xyz="{} {} {}" />'
+    CAMERA_DEFAULT_NAME = "{INPUT_CAMERA_NAME}"
+
+    PACK_NAME = "world_simulation"
+    MODEL_DIR = "/models/"
+
+    BLOCK_URDF_PATH = "block/block.urdf"
+    CAMERA_SDF_PATH = "kinect/model.sdf"
 
     def __init__(self):
         moveit_commander.roscpp_initialize(sys.argv)
@@ -51,6 +62,7 @@ class WorldSimulation:
         self.rviz_reference_frame = self.robot.get_planning_frame()
         self.num_blocks = 0
         self.initialize_block_xml()
+        self.initialize_camera_xml()
         self.initialize_add_block()
 
     def add_square_2d(self, start_x, start_y, side_length, z=0.0):
@@ -81,6 +93,30 @@ class WorldSimulation:
             color = c.value
 
             self.add_block(pose, color=color)
+
+    def add_camera(self, position, orientation, name):
+        """
+        Parameters
+        ----------
+        position: list
+            A list of floats [x, y, z] describing the center of the camera.
+        orientation: list
+            A list of float [roll, pitch, yaw] describing the orientation of the camera.
+
+        """
+        position = Point(x=position[0], y=position[1], z=position[2])
+        x, y, z, w = utils.rpy_to_quaternion(*orientation)
+        orientation = Quaternion(x=x, y=y, z=z, w=w)
+        pose = Pose(position=position, orientation=orientation)
+
+        camera_xml = self.camera_xml.replace(self.CAMERA_DEFAULT_NAME, name)
+
+        rospy.wait_for_service(const.Gazebo.SPAWN_SDF_MODEL)
+        try:
+            spawn_sdf = rospy.ServiceProxy(const.Gazebo.SPAWN_SDF_MODEL, SpawnModel)
+            resp_sdf = spawn_sdf(name, camera_xml, "/", pose, self.gazebo_reference_frame)
+        except rospy.ServiceException, e:
+            rospy.logerr("Spawn SDF service call failed: {0}".format(e))
 
     def remove_all_blocks(self, total):
         for i in range(total):
@@ -120,14 +156,20 @@ class WorldSimulation:
     #----------------------------------------------------------------------------------------------
     # Helper functions
 
-    def initialize_block_xml(self, pack_name="world_simulation", model_dir="/models/", block_urdf_dir="block/block.urdf"):
-        model_path = rospkg.RosPack().get_path(pack_name) + model_dir
+    def initialize_block_xml(self):
+        model_path = rospkg.RosPack().get_path(self.PACK_NAME) + self.MODEL_DIR
         self.block_xml = ""
-        with open (model_path + block_urdf_dir, "r") as block_file:
-            self.block_xml = block_file.read().replace('\n', '')
+        with open (model_path + self.BLOCK_URDF_PATH, "r") as block_file:
+            self.block_xml = block_file.read().replace("\n", "")
 
         self.initialize_block_size()
         self.initialize_block_inertia()
+
+    def initialize_camera_xml(self):
+        model_path = rospkg.RosPack().get_path(self.PACK_NAME) + self.MODEL_DIR
+        self.camera_xml = ""
+        with open (model_path + self.CAMERA_SDF_PATH, "r") as camera_file:
+            self.camera_xml = camera_file.read().replace("\n", "")
 
     def initialize_block_size(self):
         block_size_str = utils.get_content_between(self.block_xml, self.BLOCK_SIZE_START_FLAG, self.BLOCK_SIZE_END_FLAG)

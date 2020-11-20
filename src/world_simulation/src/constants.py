@@ -4,6 +4,7 @@ from enum import Enum
 class Gazebo:
     SPAWN_URDF_MODEL = "/gazebo/spawn_urdf_model"
     DELETE_MODEL = "/gazebo/delete_model"
+    SPAWN_SDF_MODEL = "/gazebo/spawn_sdf_model"
 
 
 class Colors(Enum):

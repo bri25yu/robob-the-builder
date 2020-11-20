@@ -23,5 +23,5 @@ if __name__ == "__main__":
     rospy.init_node('take_photo_node', anonymous = True)
     if not os.path.exists(directory_to_save):
         os.makedirs(directory_to_save)
-    saveImage("/camera/color/image_raw", "gazebo_image_one.jpg")
-    saveImage("/camera2/color/image_raw", "gazebo_image_two.jpg")
+    saveImage("/camera0/color/image_raw", "gazebo_image_one.jpg")
+    saveImage("/camera1/color/image_raw", "gazebo_image_two.jpg")
