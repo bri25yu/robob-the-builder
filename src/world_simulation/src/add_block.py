@@ -21,12 +21,14 @@ from std_msgs.msg import Header
 import moveit_commander
 
 import constants as const
+import utils as utils
 
 
 def main():
     world_sim = WorldSimulation()
+    print(world_sim.block_size, world_sim.block_mass, world_sim.block_inertia)
 
-    world_sim.add_square_2d(2, 0, 5)
+    # world_sim.add_square_2d(2, 0, 5)
 
 
 class WorldSimulation:
@@ -34,6 +36,10 @@ class WorldSimulation:
     BLOCK_COLOR_TEMPLATE = "<material>Gazebo/{}</material>"
     BLOCK_SIZE_START_FLAG = "<box size="
     BLOCK_SIZE_END_FLAG = "/>"
+    BLOCK_INERTIA_DEFAULT = '<inertia  ixx="0.0" ixy="0.0"  ixz="0.0"  iyy="0.0"  iyz="0.0"  izz="0.0" />'
+    BLOCK_INERTIA_TEMPLATE = '<inertia  ixx="{}" ixy="0.0"  ixz="0.0"  iyy="{}"  iyz="0.0"  izz="{}" />'
+    BLOCK_MASS_START_FLAG = "<mass value="
+    BLOCK_MASS_END_FLAG = "/>"
 
     def __init__(self):
         moveit_commander.roscpp_initialize(sys.argv)
@@ -66,8 +72,8 @@ class WorldSimulation:
         color_cycle = self.colors
 
         for (i, j), c in zip(product(indices, indices), color_cycle):
-            x = start_x + i * block_size
-            y = start_y + (j - (side_length // 2)) * block_size
+            x = start_x + i * self.block_size[0]
+            y = start_y + (j - (side_length // 2)) * self.block_size[1]
             z = z
             pose = Pose(position=Point(x, y, z))
 
@@ -119,10 +125,27 @@ class WorldSimulation:
         with open (model_path + block_urdf_dir, "r") as block_file:
             self.block_xml = block_file.read().replace('\n', '')
 
-        start_i = self.block_xml.find(self.BLOCK_SIZE_START_FLAG)
-        end_i = self.block_xml.find(self.BLOCK_SIZE_END_FLAG, start_i)
-        block_size_str = self.block_xml[start_i + len(self.BLOCK_SIZE_START_FLAG): end_i].replace('"', "").split()
+        self.initialize_block_size()
+        self.initialize_block_inertia()
+
+    def initialize_block_size(self):
+        block_size_str = utils.get_content_between(self.block_xml, self.BLOCK_SIZE_START_FLAG, self.BLOCK_SIZE_END_FLAG)
+        block_size_str = block_size_str.replace('"', "").split()
         self.block_size = tuple(map(lambda s: float(s), block_size_str))
+
+        block_mass_str = utils.get_content_between(self.block_xml, self.BLOCK_MASS_START_FLAG, self.BLOCK_MASS_END_FLAG)
+        block_mass_str = block_mass_str.replace('"', "").split()
+        self.block_mass = float(block_mass_str[0])
+
+    def initialize_block_inertia(self):
+        x, y, z = self.block_size
+        ixx = (1.0 / 12) * self.block_mass * (y*y + z*z)
+        iyy = (1.0 / 12) * self.block_mass * (x*x + z*z)
+        izz = (1.0 / 12) * self.block_mass * (x*x + y*y)
+        self.block_inertia = (ixx, iyy, izz)
+
+        block_inertia_str = self.BLOCK_INERTIA_TEMPLATE.format(*self.block_inertia)
+        self.block_xml = self.block_xml.replace(self.BLOCK_INERTIA_DEFAULT, block_inertia_str)
 
     def initialize_add_block(self):
         self.colors = cycle(const.Colors)
