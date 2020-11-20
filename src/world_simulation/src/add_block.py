@@ -26,9 +26,8 @@ import utils as utils
 
 def main():
     world_sim = WorldSimulation()
-    print(world_sim.block_size, world_sim.block_mass, world_sim.block_inertia)
 
-    # world_sim.add_square_2d(2, 0, 5)
+    world_sim.add_square_2d(2, 0, 3)
 
 
 class WorldSimulation:
@@ -40,6 +39,8 @@ class WorldSimulation:
     BLOCK_INERTIA_TEMPLATE = '<inertia  ixx="{}" ixy="0.0"  ixz="0.0"  iyy="{}"  iyz="0.0"  izz="{}" />'
     BLOCK_MASS_START_FLAG = "<mass value="
     BLOCK_MASS_END_FLAG = "/>"
+    BLOCK_DEFAULT_ORIGIN = '<origin xyz="0.0 0.0 0.0" />'
+    BLOCK_ORIGIN_TEMPLATE = '<origin xyz="{} {} {}" />'
 
     def __init__(self):
         moveit_commander.roscpp_initialize(sys.argv)
@@ -133,6 +134,10 @@ class WorldSimulation:
         block_size_str = block_size_str.replace('"', "").split()
         self.block_size = tuple(map(lambda s: float(s), block_size_str))
 
+        self.block_origin = tuple([v / 2.0 for v in self.block_size])
+        block_origin_str = self.BLOCK_ORIGIN_TEMPLATE.format(*self.block_origin)
+        self.block_xml = self.block_xml.replace(self.BLOCK_DEFAULT_ORIGIN, block_origin_str)
+
         block_mass_str = utils.get_content_between(self.block_xml, self.BLOCK_MASS_START_FLAG, self.BLOCK_MASS_END_FLAG)
         block_mass_str = block_mass_str.replace('"', "").split()
         self.block_mass = float(block_mass_str[0])
@@ -166,7 +171,6 @@ class WorldSimulation:
         #rospy.sleep(2)
         pose_stamped = PoseStamped(Header(frame_id = reference_frame), pose)
         self.moveit_scene.add_box(name, pose_stamped, size)
-
 
     def remove_block_gazebo(self, name):
         try:
