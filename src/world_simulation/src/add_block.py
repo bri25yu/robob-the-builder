@@ -210,8 +210,13 @@ class WorldSimulation:
             rospy.logerr("Spawn URDF service call failed: {0}".format(e))
 
     def add_block_rviz(self, pose, reference_frame, name, size):
-        #rospy.sleep(2)
-        pose_stamped = PoseStamped(Header(frame_id = reference_frame), pose)
+        adjusted_x = pose.position.x + (size[0] / 2)
+        adjusted_y = pose.position.y + (size[1] / 2)
+        adjusted_z = pose.position.z + (size[2] / 2)
+        adjusted_position = Point(x=adjusted_x, y=adjusted_y, z=adjusted_z)
+        adjusted_pose = Pose(position=adjusted_position, orientation=pose.orientation)
+
+        pose_stamped = PoseStamped(Header(frame_id = reference_frame), adjusted_pose)
         self.moveit_scene.add_box(name, pose_stamped, size)
 
     def remove_block_gazebo(self, name):
