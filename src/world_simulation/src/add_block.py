@@ -29,7 +29,10 @@ def main():
     world_sim = WorldSimulation()
 
     x, y = 2, 0
-    world_sim.add_square_2d(x, y, 3)
+    side_lengths = [5, 3, 1]  # must be in descending order
+    for i, side_length in enumerate(side_lengths):
+        world_sim.add_square_2d(x, y, side_length, i * world_sim.block_size[2])
+
     world_sim.add_camera((x, y, 1), (0, np.pi / 2, 0), "camera0")  # top down camera
     world_sim.add_camera((x - 1, y, 0), (0, 0, 0), "camera1")  # side view camera
 
