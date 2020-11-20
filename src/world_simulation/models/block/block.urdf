@@ -1,5 +1,7 @@
 <robot name="block">
+  <static>1</static>
   <link name="block">
+    <static>1</static>
     <inertial>
       <origin xyz="0.025 0.025 0.025" />
       <mass value="0.5" />
@@ -11,13 +13,13 @@
     <visual>
       <origin xyz="0.025 0.025 0.025"/>
       <geometry>
-        <box size="0.045 0.045 0.045" />
+        <box size="0.06 0.06 0.12" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.025 0.025 0.025"/>
       <geometry>
-        <box size="0.045 0.045 0.045" />
+        <box size="0.06 0.06 0.12" />
       </geometry>
     </collision>
   </link>

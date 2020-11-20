@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 
+from itertools import product, cycle
 import numpy as np
 
 import rospy
@@ -23,21 +24,16 @@ import constants as const
 
 
 def main():
-    print("Initializing")
     world_sim = WorldSimulation()
-    print("Finished initializing")
 
-    for d in const.TEST_STRUCTURE:
-        pose, color = d[const.El.POSE], d[const.El.COLOR]
-        block_pose = Pose(position=Point(**pose))
-        world_sim.add_block(block_pose, color=color)
-    # world_sim.remove_all_blocks(3)
+    world_sim.add_square_2d(2, 0, 5)
 
 
 class WorldSimulation:
-    BLOCK_SIZE = (0.045, 0.045, 0.045)
     BLOCK_DEFAULT_COLOR = "<material>Gazebo/Red</material>"
     BLOCK_COLOR_TEMPLATE = "<material>Gazebo/{}</material>"
+    BLOCK_SIZE_START_FLAG = "<box size="
+    BLOCK_SIZE_END_FLAG = "/>"
 
     def __init__(self):
         moveit_commander.roscpp_initialize(sys.argv)
@@ -48,6 +44,36 @@ class WorldSimulation:
         self.rviz_reference_frame = self.robot.get_planning_frame()
         self.num_blocks = 0
         self.initialize_block_xml()
+        self.initialize_add_block()
+
+    def add_square_2d(self, start_x, start_y, side_length, z=0.0):
+        """
+        Creates a square of blocks centered around (start_x, start_y).
+
+        Parameters
+        ----------
+        start_x: float
+            The x-coordinate of the center of the square of blocks.
+        start_y: float
+            The y-coordinate of the center of the square of blocks.
+        side_length: int
+            The number of blocks in the side length of the square.
+        z: float
+            The z-coordinate of all the blocks.
+
+        """
+        indices = list(range(side_length))
+        color_cycle = self.colors
+
+        for (i, j), c in zip(product(indices, indices), color_cycle):
+            x = start_x + i * block_size
+            y = start_y + (j - (side_length // 2)) * block_size
+            z = z
+            pose = Pose(position=Point(x, y, z))
+
+            color = c.value
+
+            self.add_block(pose, color=color)
 
     def remove_all_blocks(self, total):
         for i in range(total):
@@ -67,7 +93,7 @@ class WorldSimulation:
         """
         name = "block{0}".format(self.num_blocks)
         self.add_block_gazebo(pose, self.gazebo_reference_frame, name, color=color)
-        size = self.BLOCK_SIZE
+        size = self.block_size
         self.add_block_rviz(pose, self.rviz_reference_frame, name, size)
         self.num_blocks += 1
 
@@ -86,12 +112,20 @@ class WorldSimulation:
 
     #----------------------------------------------------------------------------------------------
     # Helper functions
-    #TODO: add support for different colors
+
     def initialize_block_xml(self, pack_name="world_simulation", model_dir="/models/", block_urdf_dir="block/block.urdf"):
         model_path = rospkg.RosPack().get_path(pack_name) + model_dir
         self.block_xml = ""
         with open (model_path + block_urdf_dir, "r") as block_file:
             self.block_xml = block_file.read().replace('\n', '')
+
+        start_i = self.block_xml.find(self.BLOCK_SIZE_START_FLAG)
+        end_i = self.block_xml.find(self.BLOCK_SIZE_END_FLAG, start_i)
+        block_size_str = self.block_xml[start_i + len(self.BLOCK_SIZE_START_FLAG): end_i].replace('"', "").split()
+        self.block_size = tuple(map(lambda s: float(s), block_size_str))
+
+    def initialize_add_block(self):
+        self.colors = cycle(const.Colors)
 
     def add_block_gazebo(self, pose, reference_frame, name, color=None):
         colored_xml = self.block_xml
