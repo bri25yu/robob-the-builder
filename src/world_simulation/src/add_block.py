@@ -27,9 +27,13 @@ import utils as utils
 
 def main():
     world_sim = WorldSimulation()
+    create_world_with_structure(world_sim)
 
+
+
+def create_world_with_structure(world_sim):
     x, y = 2, 0
-    side_lengths = [5, 3, 1]  # must be in descending order
+    side_lengths = [3, 1]  # must be in descending order
     for i, side_length in enumerate(side_lengths):
         world_sim.add_square_2d(x, y, side_length, i * world_sim.block_size[2])
 
@@ -196,7 +200,6 @@ class WorldSimulation:
         iyy = (1.0 / 12) * self.block_mass * (x*x + z*z)
         izz = (1.0 / 12) * self.block_mass * (x*x + y*y)
         self.block_inertia = (ixx, iyy, izz)
-
         block_inertia_str = self.BLOCK_INERTIA_TEMPLATE.format(*self.block_inertia)
         self.block_xml = self.block_xml.replace(self.BLOCK_INERTIA_DEFAULT, block_inertia_str)
 
@@ -207,7 +210,6 @@ class WorldSimulation:
         colored_xml = self.block_xml
         if color is not None:
             colored_xml = self.block_xml.replace(self.BLOCK_DEFAULT_COLOR, self.BLOCK_COLOR_TEMPLATE.format(color))
-
         rospy.wait_for_service(const.Gazebo.SPAWN_URDF_MODEL)
         try:
             spawn_urdf = rospy.ServiceProxy(const.Gazebo.SPAWN_URDF_MODEL, SpawnModel)
