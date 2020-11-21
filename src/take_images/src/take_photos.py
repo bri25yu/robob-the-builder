@@ -25,3 +25,5 @@ if __name__ == "__main__":
         os.makedirs(directory_to_save)
     saveImage("/camera0/color/image_raw", "gazebo_image_one.jpg")
     saveImage("/camera1/color/image_raw", "gazebo_image_two.jpg")
+    saveImage("/camera2/color/image_raw", "gazebo_angled_image_one.jpg")
+    saveImage("/camera3/color/image_raw", "gazebo_angled_image_two.jpg")

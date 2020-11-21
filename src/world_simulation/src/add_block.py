@@ -33,9 +33,12 @@ def main():
     for i, side_length in enumerate(side_lengths):
         world_sim.add_square_2d(x, y, side_length, i * world_sim.block_size[2])
 
+    #top down and side views
     world_sim.add_camera((x, y, 1), (0, np.pi / 2, 0), "camera0")  # top down camera
     world_sim.add_camera((x - 1, y, 0), (0, 0, 0), "camera1")  # side view camera
-
+    #angled views
+    world_sim.add_camera((2.3, -.75, 1), (.2, .7, 1.55), "camera2")
+    world_sim.add_camera((3, -.5, .5), (0, .2, 2.3), "camera3")
 
 class WorldSimulation:
     BLOCK_DEFAULT_COLOR = "<material>Gazebo/Red</material>"
