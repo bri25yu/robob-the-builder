@@ -5,4 +5,6 @@
     <param name="odom_frame" value="/mobile_base_controller/odom" />
   </node>
 
+  <node pkg="navigation_goal" type="determine_navigation_goal.py" output="screen" /node>
+
 </launch>
