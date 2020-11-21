@@ -29,6 +29,16 @@ def main():
         rospy.signal_shutdown("Action server not available!")
     else:
         return client.get_result()
+
+def hi():
+    rospy.wait_for_service('det_nav_goal', timeout=120)
+    det_nav_goal = rospy.ServiceProxy('det_nav_goal', Nav_goal, persistent=True)
+    try:
+       resp1 = add_two_ints(x, y)
+    except rospy.ServiceException as exc:
+      print("Service did not process request: " + str(exc))
+
+    det_nav_goal.close()
         
 if __name__ == "__main__":
     rospy.init_node('navigation_goal_node')

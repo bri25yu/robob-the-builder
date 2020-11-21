@@ -8,25 +8,49 @@ import rospkg
 
 #TODO: remove MapMetaData, encode necessary info in parameter server?
 from nav_msgs.msg import OccupancyGrid, MapMetaData
+from geometry_msgs.msg import Point, Pose
 
 """
 Subscribe to map, map_header
 Use array to determine location to go to next
 """
-def det_nav_goal(world_map):
-	# I don't care where I am; I only care about where i need to go
-	# could pass it as service into mover node?
-	cols = world_map.info.width
-	rows = world_map.info.height
 
-	# map is ridiculously large, so randomly sample?
+# number of points to check for unseen point
+NUM_SAMPLES = 100
+class Nav_goal:
 
+	def __init__(self):
+		self.goal = Point(0, 0, 0)
+
+	def det_nav_goal(self, world_map):
+		# I don't care where I am; I only care about where i need to go
+		# could pass it as service into mover node?
+		cols = world_map.info.width
+		rows = world_map.info.height
+		res = world_map.info.resolution
+		x_origin = world_map.info.origin.position.x
+		y_origin = world_map.info.origin.position.y
+		grid = world_map.data
+
+		# map is large, so randomly sample
+		# TODO: need to kill node somehow
+		for _ in range(NUM_SAMPLES):
+			col = np.random.randint(cols)
+			row = np.random.randint(rows)
+			if data[row][col] == -1:
+				self.goal.x = col * res + x_origin
+				self.goal.y = row * res + y_origin
+
+	def get_nav_goal(self):
+		return self.goal
 
 def subscribe_to_map():
-	rospy.Subscriber("map", OccupancyGrid, det_nav_goal)
+	rospy.init_node('det_nav_goal_server')
+	nav_goal = Nav_goal()
+	rospy.Subscriber("map", OccupancyGrid, nav_goal.det_nav_goal)
+	s = rospy.Service('det_nav_goal', Point, nav_goal.get_nav_goal)
 
 if __name__ == '__main__':
-	rospy.init_node('det_nav_goal')
 	try:
 		subscribe_to_map()
 	except rospy.ROSInterruptException:
