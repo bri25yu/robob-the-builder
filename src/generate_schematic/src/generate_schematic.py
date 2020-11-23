@@ -8,13 +8,16 @@ import cv2
 
 import constants as const
 
+import matplotlib.pyplot as plt
 
-IMAGE_IN_PATH = "images/gazebo_image_two.jpg"
-IMAGE_OUT_NAME = "gazebo_image_two_clustering.jpg"
+
+
+IMAGE_IN_PATH = "images/gazebo_angled_image_one.jpg"
+IMAGE_OUT_NAME = "gazebo_angled_image_one_clustering.jpg"
 def main():
     g = GenerateSchematic()
     img = g.get_image(IMAGE_IN_PATH)
-    bottom_left_coordinates = g.find_all_bottom_left_coordinates(img)
+    bottom_left_coordinates = g.find_all_bottom_left_coordinates_2d(img)
 
     #display an image with bottom left coordinates highlighted in white
     for coordinates in bottom_left_coordinates:
@@ -70,7 +73,7 @@ class GenerateSchematic:
 
         return segmentation_method(img, **kwargs)
 
-    def find_image_bottom_left_coordinates(self, img):
+    def find_image_bottom_left_coordinates_2d(self, img):
         """
         Parameters
         ----------
@@ -100,7 +103,7 @@ class GenerateSchematic:
             results.append((min_x, max_y))
         return results
 
-    def find_all_bottom_left_coordinates(self, img):
+    def find_all_bottom_left_coordinates_2d(self, img):
         """
         Parameters
         ----------
@@ -113,7 +116,6 @@ class GenerateSchematic:
         results : np.ndarray
             An array of bottom left block coordinates in the image
         """
-
         #perform clustering to divide image into groups of the same color
         NUM_CLUSTERS = 11
         segmented, clustered_segments, labels_bincount = self.segment(img, segmentation_method=Segmentation.cluster_segment, n_clusters=NUM_CLUSTERS)
@@ -130,9 +132,24 @@ class GenerateSchematic:
             if percent_data > .001 and percent_data < .5:
                 #read image and find its bottom left block coordinates
                 path_to_image = "images/" + IMAGE_OUT_NAME + "_" + str(i) + ".jpg"
-                image_bottom_left_coordinates = self.find_image_bottom_left_coordinates(self.get_image(path_to_image))
+                image_bottom_left_coordinates = self.find_image_bottom_left_coordinates_2d(self.get_image(path_to_image))
                 bottom_left_coordinates.extend(image_bottom_left_coordinates)
         return bottom_left_coordinates
+
+    def unify_colors(self, img):
+        """
+        Produce a new image where shadows appear same color as block_size
+
+        Parameters
+        ----------
+        img : ndarray
+
+        Returns
+        ---------
+        uniform_img : ndarray
+        """
+        sums = np.reshape(np.sum(img, axis = 2), (img.shape[0], img.shape[1], 1)).astype(np.float32)
+        return (img/sums * 255).astype(np.uint8)
 
 
 class Segmentation:
