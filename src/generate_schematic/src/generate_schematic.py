@@ -151,6 +151,12 @@ class GenerateSchematic:
         sums = np.reshape(np.sum(img, axis = 2), (img.shape[0], img.shape[1], 1)).astype(np.float32)
         return (img/sums * 255).astype(np.uint8)
 
+    def match_images(self, image_one, image_two):
+        
+    def find_corners_3d(self, img):
+        #cluster image by color and find contours, then find corners in contour
+        #do this for each image, find matching corners in images
+        #to reconstruct all corners, do it layer by layer. if corner shows up iin llayer 1 but not layer 0, add to layer 0.
 
 class Segmentation:
 
