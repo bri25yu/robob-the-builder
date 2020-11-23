@@ -152,11 +152,21 @@ class GenerateSchematic:
         return (img/sums * 255).astype(np.uint8)
 
     def match_images(self, image_one, image_two):
-        
+        """
+        TODO:
+        1. Get intrinsic camera matrixes from urdf file
+        2. Get R and T transform between cameras
+        3. Fill in find_corners_3d to find corners in each image
+        4. Given corners in each image, find corners that match in both images
+        5. Use least squares triangulate to find 3d coordinates of these corners
+        6. Fill in missing corners layer by layer (also, if corner shows up in layer n but not layer n - 1, add to layer n - 1.)
+        7. Reconstruct positions of blocks from 3d coordinates of corners
+
+        """
+
     def find_corners_3d(self, img):
         #cluster image by color and find contours, then find corners in contour
-        #do this for each image, find matching corners in images
-        #to reconstruct all corners, do it layer by layer. if corner shows up iin llayer 1 but not layer 0, add to layer 0.
+    
 
 class Segmentation:
 
