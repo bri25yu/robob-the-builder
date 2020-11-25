@@ -10,6 +10,8 @@ from cv_bridge import CvBridge
 import cv2 as cv
 import os
 
+NUM_CAMERAS = 4
+
 directory_to_save = 'images'
 def saveImage(topic, filename):
     imageData = rospy.wait_for_message(topic, Image)
@@ -23,7 +25,5 @@ if __name__ == "__main__":
     rospy.init_node('take_photo_node', anonymous = True)
     if not os.path.exists(directory_to_save):
         os.makedirs(directory_to_save)
-    saveImage("/camera0/color/image_raw", "gazebo_image_one.jpg")
-    saveImage("/camera1/color/image_raw", "gazebo_image_two.jpg")
-    saveImage("/camera2/color/image_raw", "gazebo_angled_image_one.jpg")
-    saveImage("/camera3/color/image_raw", "gazebo_angled_image_two.jpg")
+    for i in range(NUM_CAMERAS):
+        saveImage("/camera{}/color/image_raw".format(i), "camera{}_image_raw.jpg".format(i))

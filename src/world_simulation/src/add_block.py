@@ -22,6 +22,7 @@ from std_msgs.msg import Header
 import moveit_commander
 
 import constants as const
+from ..constants import CAMERAS
 import utils as utils
 
 
@@ -55,12 +56,10 @@ def create_world_with_structure(world_sim):
     for i, side_length in enumerate(side_lengths):
         world_sim.add_square_2d(x, y, side_length, i * world_sim.block_size[2])
 
-    #top down and side views
-    world_sim.add_camera((x, y, 1), (0, np.pi / 2, 0), "camera0")  # top down camera
-    world_sim.add_camera((x - 1, y, 0), (0, 0, 0), "camera1")  # side view camera
-    #angled views
-    world_sim.add_camera((2.3, -.75, 1), (.2, .7, 1.55), "camera2")
-    world_sim.add_camera((3, -.5, .5), (0, .2, 2.3), "camera3")
+
+    for camera in CAMERAS.items():
+        world_sim.add_camera(*camera)
+
 
 class WorldSimulation:
     BLOCK_DEFAULT_COLOR = "<material>Gazebo/Red</material>"
@@ -122,21 +121,13 @@ class WorldSimulation:
 
             self.add_block(pose, color=color)
 
-    def add_camera(self, position, orientation, name):
+    def add_camera(self, name, pose):
         """
         Parameters
         ----------
-        position: list
-            A list of floats [x, y, z] describing the center of the camera.
-        orientation: list
-            A list of float [roll, pitch, yaw] describing the orientation of the camera.
+        pose: Pose
 
         """
-        position = Point(x=position[0], y=position[1], z=position[2])
-        x, y, z, w = utils.rpy_to_quaternion(*orientation)
-        orientation = Quaternion(x=x, y=y, z=z, w=w)
-        pose = Pose(position=position, orientation=orientation)
-
         camera_xml = self.camera_xml.replace(self.CAMERA_DEFAULT_NAME, name)
 
         rospy.wait_for_service(const.Gazebo.SPAWN_SDF_MODEL)
