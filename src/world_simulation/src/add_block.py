@@ -22,7 +22,7 @@ from std_msgs.msg import Header
 import moveit_commander
 
 import constants as const
-from ..constants import CAMERAS
+from global_constants import constants as gconst
 import utils as utils
 
 
@@ -57,7 +57,7 @@ def create_world_with_structure(world_sim):
         world_sim.add_square_2d(x, y, side_length, i * world_sim.block_size[2])
 
 
-    for camera in CAMERAS.items():
+    for camera in gconst.CAMERAS.items():
         world_sim.add_camera(*camera)
 
 

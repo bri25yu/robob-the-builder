@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from geometry_msgs.msg import (
     Pose,
     Point,
@@ -6,7 +8,7 @@ from geometry_msgs.msg import (
 
 import numpy as np
 
-from world_simulation.src.utils import rpy_to_quaternion
+from utils import rpy_to_quaternion
 
 
 x, y = 2, 0
@@ -16,4 +18,4 @@ CAMERA_DATA = [
     ["camera2", (2.3, -.75, 1), (.2, .7, 1.55)],
     ["camera3", (3, -.5, .5), (0, .2, 2.3)],
 ]
-CAMERAS = {d[0]: Pose(position=Point(*d[1]), orientation=Quaternion(rpy_to_quaternion(*d[2]))) for d in CAMERA_DATA}
+CAMERAS = {d[0]: Pose(position=Point(*d[1]), orientation=Quaternion(*rpy_to_quaternion(*d[2]))) for d in CAMERA_DATA}
