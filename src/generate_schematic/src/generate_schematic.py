@@ -154,7 +154,7 @@ class GenerateSchematic:
     def match_images(self, image_one, image_two):
         """
         TODO:
-        1. Get intrinsic camera matrixes from urdf file
+        1. Get intrinsic camera matrices from urdf file
         2. Get R and T transform between cameras
         3. Fill in find_corners_3d to find corners in each image
         4. Given corners in each image, find corners that match in both images
@@ -166,7 +166,8 @@ class GenerateSchematic:
 
     def find_corners_3d(self, img):
         #cluster image by color and find contours, then find corners in contour
-    
+        pass
+
 
 class Segmentation:
 
