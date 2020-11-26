@@ -66,13 +66,15 @@ class WorldSimulation:
     BLOCK_URDF_PATH = "block/block.urdf"
     CAMERA_SDF_PATH = "kinect/model.sdf"
 
-    def __init__(self):
+    def __init__(self, gazebo_only=False):
+        self.gazebo_only = gazebo_only
         moveit_commander.roscpp_initialize(sys.argv)
         self.moveit_scene = moveit_commander.PlanningSceneInterface()
-        self.robot = moveit_commander.RobotCommander()
         #TODO: later, once we add gmapping, we should be able to set both reference frames to map
         self.gazebo_reference_frame = "world"
-        self.rviz_reference_frame = self.robot.get_planning_frame()
+        if not self.gazebo_only:
+            self.robot = moveit_commander.RobotCommander()
+            self.rviz_reference_frame = self.robot.get_planning_frame()
         self.num_blocks = 0
         self.initialize_block_xml()
         self.initialize_camera_xml()
@@ -141,8 +143,9 @@ class WorldSimulation:
         """
         name = "block{0}".format(self.num_blocks)
         self.add_block_gazebo(pose, self.gazebo_reference_frame, name, color=color)
-        size = self.block_size
-        self.add_block_rviz(pose, self.rviz_reference_frame, name, size)
+        if not self.gazebo_only:
+            size = self.block_size
+            self.add_block_rviz(pose, self.rviz_reference_frame, name, size)
         self.num_blocks += 1
 
     def remove_block(self, name):
@@ -156,7 +159,8 @@ class WorldSimulation:
 
         """
         # self.remove_block_gazebo(name)
-        self.remove_block_rviz(name)
+        if not self.gazebo_only:
+            self.remove_block_rviz(name)
 
     #----------------------------------------------------------------------------------------------
     # Helper functions
