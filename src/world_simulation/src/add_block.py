@@ -2,7 +2,6 @@
 import sys
 
 from itertools import product, cycle
-import numpy as np
 
 import rospy
 import rospkg
@@ -11,7 +10,6 @@ from geometry_msgs.msg import (
     PoseStamped,
     Pose,
     Point,
-    Quaternion,
 )
 from std_msgs.msg import Header
 
@@ -117,7 +115,7 @@ class WorldSimulation:
 
     def remove_all_blocks(self, total):
         for i in range(total):
-            self.remove_block("block{0}".format(i))
+            self.remove_block_rviz("block{0}".format(i))
 
     def add_block(self, pose, color=None):
         """
@@ -144,20 +142,21 @@ class WorldSimulation:
     #----------------------------------------------------------------------------------------------
     # Helper functions
 
+    def initialize_xml(self, model_path):
+        model_dir_path = rospkg.RosPack().get_path(self.PACK_NAME) + self.MODEL_DIR
+        xml = ""
+        with open (model_dir_path + model_path, "r") as xml_file:
+            xml = xml_file.read().replace("\n", "")
+        return xml
+
     def initialize_block_xml(self):
-        model_path = rospkg.RosPack().get_path(self.PACK_NAME) + self.MODEL_DIR
-        self.block_xml = ""
-        with open (model_path + self.BLOCK_URDF_PATH, "r") as block_file:
-            self.block_xml = block_file.read().replace("\n", "")
+        self.block_xml = self.initialize_xml(self.BLOCK_URDF_PATH)
 
         self.initialize_block_size()
         self.initialize_block_inertia()
 
     def initialize_camera_xml(self):
-        model_path = rospkg.RosPack().get_path(self.PACK_NAME) + self.MODEL_DIR
-        self.camera_xml = ""
-        with open (model_path + self.CAMERA_SDF_PATH, "r") as camera_file:
-            self.camera_xml = camera_file.read().replace("\n", "")
+        self.camera_xml = self.initialize_xml(self.CAMERA_SDF_PATH)
 
     def initialize_block_size(self):
         block_size_str = utils.get_content_between(self.block_xml, self.BLOCK_SIZE_START_FLAG, self.BLOCK_SIZE_END_FLAG)
