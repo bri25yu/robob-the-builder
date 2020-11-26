@@ -1,0 +1,4 @@
+#request (empty)
+---
+#response
+geometry_msgs/Point position
