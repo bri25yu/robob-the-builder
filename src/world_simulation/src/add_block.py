@@ -33,21 +33,8 @@ def main():
 
 
 def create_exploration_world(world_sim):
-    block_positions = [
-        [-3, 3, 0],
-        [-1, -4, 0],
-        [3, -2, 0],
-        [-4, -1, 0],
-        [-1,-3, 0],
-        [2, 4, 0],
-        [1, -4, 0],
-        [3, 0, 0],
-        [-1, 4, 0],
-        [1, -1, 0]
-    ]
-    for pos in block_positions:
-        pose = Pose(position = Point(pos[0], pos[1], pos[2]))
-        world_sim.add_block(pose)
+    for pos in gconst.EXPLORATION_BLOCKS:
+        world_sim.add_block(Pose(position=Point(*pos)))
 
 
 def create_world_with_structure(world_sim):

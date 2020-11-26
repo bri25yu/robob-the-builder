@@ -24,3 +24,16 @@ STRUCTURE_TO_BUILD = [  # Passed into WorldSimulation.add_square_2d
     [x, y, 3, 0],
     [x, y, 1, 1],
 ]
+
+EXPLORATION_BLOCKS = [
+    [-3, 3, 0],
+    [-1, -4, 0],
+    [3, -2, 0],
+    [-4, -1, 0],
+    [-1,-3, 0],
+    [2, 4, 0],
+    [1, -4, 0],
+    [3, 0, 0],
+    [-1, 4, 0],
+    [1, -1, 0]
+]
