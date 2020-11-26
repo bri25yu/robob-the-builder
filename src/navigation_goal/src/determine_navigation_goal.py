@@ -16,11 +16,12 @@ Use array to determine location to go to next
 """
 
 # number of points to check for unseen point
-NUM_SAMPLES = 100
+NUM_SAMPLES = 1000
 class Nav_goal:
 
 	def __init__(self):
 		self.goal = Point(0, 0, 0)
+		self.nav_goal_service = rospy.Service('det_nav_goal', navigation_goal.srv.NavGoal, nav_goal.get_nav_goal)
 
 	def det_nav_goal(self, world_map):
 		# I don't care where I am; I only care about where i need to go
@@ -34,12 +35,18 @@ class Nav_goal:
 
 		# map is large, so randomly sample
 		# TODO: need to kill node somehow
+		found_unknown = False
 		for _ in range(NUM_SAMPLES):
 			col = np.random.randint(cols)
 			row = np.random.randint(rows)
 			if data[row][col] == -1:
 				self.goal.x = col * res + x_origin
 				self.goal.y = row * res + y_origin
+				found_unknown = True
+				break
+		if not found_unknown:
+			
+
 
 	def get_nav_goal(self):
 		return self.goal
@@ -48,7 +55,6 @@ def subscribe_to_map():
 	rospy.init_node('det_nav_goal_server')
 	nav_goal = Nav_goal()
 	rospy.Subscriber("map", OccupancyGrid, nav_goal.det_nav_goal)
-	s = rospy.Service('det_nav_goal', Point, nav_goal.get_nav_goal)
 
 if __name__ == '__main__':
 	try:
