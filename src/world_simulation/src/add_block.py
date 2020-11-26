@@ -7,10 +7,6 @@ import numpy as np
 import rospy
 import rospkg
 
-from gazebo_msgs.srv import (
-    SpawnModel,
-    DeleteModel,
-)
 from geometry_msgs.msg import (
     PoseStamped,
     Pose,
@@ -23,7 +19,7 @@ import moveit_commander
 
 import constants as const
 from global_constants import constants as gconst
-import utils as utils
+import utils
 
 
 def main():
@@ -117,13 +113,7 @@ class WorldSimulation:
 
         """
         camera_xml = self.camera_xml.replace(self.CAMERA_DEFAULT_NAME, name)
-
-        rospy.wait_for_service(const.Gazebo.SPAWN_SDF_MODEL)
-        try:
-            spawn_sdf = rospy.ServiceProxy(const.Gazebo.SPAWN_SDF_MODEL, SpawnModel)
-            resp_sdf = spawn_sdf(name, camera_xml, "/", pose, self.gazebo_reference_frame)
-        except rospy.ServiceException, e:
-            rospy.logerr("Spawn SDF service call failed: {0}".format(e))
+        utils.add_block_gazebo(const.Gazebo.SPAWN_SDF_MODEL, camera_xml, pose, self.gazebo_reference_frame, name)
 
     def remove_all_blocks(self, total):
         for i in range(total):
@@ -198,12 +188,7 @@ class WorldSimulation:
         colored_xml = self.block_xml
         if color is not None:
             colored_xml = self.block_xml.replace(self.BLOCK_DEFAULT_COLOR, self.BLOCK_COLOR_TEMPLATE.format(color))
-        rospy.wait_for_service(const.Gazebo.SPAWN_URDF_MODEL)
-        try:
-            spawn_urdf = rospy.ServiceProxy(const.Gazebo.SPAWN_URDF_MODEL, SpawnModel)
-            resp_urdf = spawn_urdf(name, colored_xml, "/", pose, reference_frame)
-        except rospy.ServiceException, e:
-            rospy.logerr("Spawn URDF service call failed: {0}".format(e))
+        utils.add_block_gazebo(const.Gazebo.SPAWN_URDF_MODEL, colored_xml, pose, reference_frame, name)
 
     def add_block_rviz(self, pose, reference_frame, name, size):
         adjusted_x = pose.position.x + (size[0] / 2)
