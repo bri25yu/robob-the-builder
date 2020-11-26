@@ -27,7 +27,7 @@ import utils as utils
 
 
 def main():
-    world_sim = WorldSimulation()
+    world_sim = WorldSimulation(gazebo_only=True)
     # create_exploration_world(world_sim)
     create_world_with_structure(world_sim)
 
@@ -148,19 +148,8 @@ class WorldSimulation:
             self.add_block_rviz(pose, self.rviz_reference_frame, name, size)
         self.num_blocks += 1
 
-    def remove_block(self, name):
-        """
-        Removes the block by the given name.
-
-        Parameters
-        ----------
-        name : str
-            The name of the block to remove.
-
-        """
-        # self.remove_block_gazebo(name)
-        if not self.gazebo_only:
-            self.remove_block_rviz(name)
+    def remove_block_rviz(self, name):
+        self.moveit_scene.remove_world_object(name)
 
     #----------------------------------------------------------------------------------------------
     # Helper functions
@@ -226,15 +215,6 @@ class WorldSimulation:
         pose_stamped = PoseStamped(Header(frame_id = reference_frame), adjusted_pose)
         self.moveit_scene.add_box(name, pose_stamped, size)
 
-    def remove_block_gazebo(self, name):
-        try:
-            delete_model = rospy.ServiceProxy(const.Gazebo.DELETE_MODEL, DeleteModel)
-            resp_delete = delete_model(str(name))
-        except Exception, e:
-            print("Delete Model service call failed: {0}".format(e))
-
-    def remove_block_rviz(self, name):
-        self.moveit_scene.remove_world_object(name)
 
 if __name__ == "__main__":
     rospy.init_node('moveit_node')
