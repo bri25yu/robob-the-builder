@@ -19,3 +19,8 @@ CAMERA_DATA = [
     ["camera3", (3, -.5, .5), (0, .2, 2.3)],
 ]
 CAMERAS = {d[0]: Pose(position=Point(*d[1]), orientation=Quaternion(*rpy_to_quaternion(*d[2]))) for d in CAMERA_DATA}
+
+STRUCTURE_TO_BUILD = [  # Passed into WorldSimulation.add_square_2d
+    [x, y, 3, 0],
+    [x, y, 1, 1],
+]

@@ -51,11 +51,8 @@ def create_exploration_world(world_sim):
 
 
 def create_world_with_structure(world_sim):
-    x, y = 2, 0
-    side_lengths = [3, 1]  # must be in descending order
-    for i, side_length in enumerate(side_lengths):
-        world_sim.add_square_2d(x, y, side_length, i * world_sim.block_size[2])
-
+    for square in gconst.STRUCTURE_TO_BUILD:
+        world_sim.add_square_2d(square[:-1], square[-1] * world_sim.block_size[2])
 
     for camera in gconst.CAMERAS.items():
         world_sim.add_camera(*camera)
