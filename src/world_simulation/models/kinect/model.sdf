@@ -41,13 +41,13 @@
           <!-- Keep this zero, update_rate in the parent <sensor> tag
             will control the frame rate. -->
           <updateRate>0.0</updateRate>
-          <cameraName>camera_ir</cameraName>
+          <cameraName>{INPUT_CAMERA_NAME}</cameraName>
           <imageTopicName>/{INPUT_CAMERA_NAME}/color/image_raw</imageTopicName>
           <cameraInfoTopicName>/{INPUT_CAMERA_NAME}/color/camera_info</cameraInfoTopicName>
           <depthImageTopicName>/{INPUT_CAMERA_NAME}/depth/image_raw</depthImageTopicName>
           <depthImageCameraInfoTopicName>/{INPUT_CAMERA_NAME}/depth/camera_info</depthImageCameraInfoTopicName>
           <pointCloudTopicName>/{INPUT_CAMERA_NAME}/depth/points</pointCloudTopicName>
-          <frameName>camera_link</frameName>
+          <frameName>{INPUT_CAMERA_NAME}_link</frameName>
           <pointCloudCutoff>0.5</pointCloudCutoff>
           <pointCloudCutoffMax>3.0</pointCloudCutoffMax>
           <distortionK1>0</distortionK1>

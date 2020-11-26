@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+import rospy
+
+from sensor_msgs import CameraInfo
+
 import numpy as np
 
 import os
@@ -25,6 +29,45 @@ def main():
     cv2.imshow("BottomLeftCoordinates", img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+
+class CameraDTO:
+    TOPIC_TEMPLATE = "/camera{}/color/camera_info"
+
+    def __init__(self, index, pose, intrinsic_matrix=None, image=None):
+        """
+        Parameters
+        ----------
+        index: int
+        pose: geometryMsgs/PoseStamped
+        intrinsic_matrix: np.ndarray
+                [fx  0 cx]
+            K = [ 0 fy cy]
+                [ 0  0  1]
+        image: np.ndarray
+
+        """
+        self.index = index
+        self.pose = pose
+        self.intrinsic_matrix = intrinsic_matrix
+        self.image = image
+
+        self.initialize()
+
+    def initialize(self):
+        if self.intrinsic_matrix is None:
+            self.get_intrinsic_matrix()
+        if self.image is None:
+            self.get_raw_image()
+
+    def get_intrinsic_matrix(self):
+        camera_info = rospy.wait_for_message(CameraDTO.TOPIC_TEMPLATE.format(self.index), CameraInfo)
+        self.intrinsic_matrix = camera_info.K
+
+    def get_raw_image(self):
+        # See GenerateSchematic.get_image
+        self.image = cv2.imread("images/camera{}_image_raw.jpg".format(self.index))
+
 
 class GenerateSchematic:
 
@@ -151,10 +194,15 @@ class GenerateSchematic:
         sums = np.reshape(np.sum(img, axis = 2), (img.shape[0], img.shape[1], 1)).astype(np.float32)
         return (img/sums * 255).astype(np.uint8)
 
-    def match_images(self, image_one, image_two):
+    def match_images(self, image_indices):
         """
+        Parameters
+        ----------
+        image_indices: list
+            A list of the indices corresponding to the images we want to match.
+
         TODO:
-        1. Get intrinsic camera matrixes from urdf file
+        1. DONE Get intrinsic camera matrices from urdf file
         2. Get R and T transform between cameras
         3. Fill in find_corners_3d to find corners in each image
         4. Given corners in each image, find corners that match in both images
@@ -163,10 +211,12 @@ class GenerateSchematic:
         7. Reconstruct positions of blocks from 3d coordinates of corners
 
         """
+        cameras = [CameraDto()]
 
     def find_corners_3d(self, img):
         #cluster image by color and find contours, then find corners in contour
-    
+        pass
+
 
 class Segmentation:
 
