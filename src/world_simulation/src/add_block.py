@@ -42,23 +42,8 @@ def create_world_with_structure(world_sim):
 
 
 class WorldSimulation:
-    BLOCK_DEFAULT_COLOR = "<material>Gazebo/Red</material>"
-    BLOCK_COLOR_TEMPLATE = "<material>Gazebo/{}</material>"
-    BLOCK_SIZE_START_FLAG = "<box size="
-    BLOCK_SIZE_END_FLAG = "/>"
-    BLOCK_INERTIA_DEFAULT = '<inertia  ixx="0.0" ixy="0.0"  ixz="0.0"  iyy="0.0"  iyz="0.0"  izz="0.0" />'
-    BLOCK_INERTIA_TEMPLATE = '<inertia  ixx="{}" ixy="0.0"  ixz="0.0"  iyy="{}"  iyz="0.0"  izz="{}" />'
-    BLOCK_MASS_START_FLAG = "<mass value="
-    BLOCK_MASS_END_FLAG = "/>"
-    BLOCK_DEFAULT_ORIGIN = '<origin xyz="0.0 0.0 0.0" />'
-    BLOCK_ORIGIN_TEMPLATE = '<origin xyz="{} {} {}" />'
-    CAMERA_DEFAULT_NAME = "{INPUT_CAMERA_NAME}"
-
     PACK_NAME = "world_simulation"
     MODEL_DIR = "/models/"
-
-    BLOCK_URDF_PATH = "block/block.urdf"
-    CAMERA_SDF_PATH = "kinect/model.sdf"
 
     def __init__(self, gazebo_only=False):
         self.gazebo_only = gazebo_only
@@ -110,12 +95,8 @@ class WorldSimulation:
         pose: Pose
 
         """
-        camera_xml = self.camera_xml.replace(self.CAMERA_DEFAULT_NAME, name)
+        camera_xml = self.camera_xml.replace(const.CAMERA_DEFAULT_NAME, name)
         utils.add_block_gazebo(const.Gazebo.SPAWN_SDF_MODEL, camera_xml, pose, self.gazebo_reference_frame, name)
-
-    def remove_all_blocks(self, total):
-        for i in range(total):
-            self.remove_block_rviz("block{0}".format(i))
 
     def add_block(self, pose, color=None):
         """
@@ -136,6 +117,10 @@ class WorldSimulation:
             self.add_block_rviz(pose, self.rviz_reference_frame, name, size)
         self.num_blocks += 1
 
+    def remove_all_blocks(self, total):
+        for i in range(total):
+            self.remove_block_rviz("block{0}".format(i))
+
     def remove_block_rviz(self, name):
         self.moveit_scene.remove_world_object(name)
 
@@ -150,24 +135,24 @@ class WorldSimulation:
         return xml
 
     def initialize_block_xml(self):
-        self.block_xml = self.initialize_xml(self.BLOCK_URDF_PATH)
+        self.block_xml = self.initialize_xml(const.BLOCK_URDF_PATH)
 
         self.initialize_block_size()
         self.initialize_block_inertia()
 
     def initialize_camera_xml(self):
-        self.camera_xml = self.initialize_xml(self.CAMERA_SDF_PATH)
+        self.camera_xml = self.initialize_xml(const.CAMERA_SDF_PATH)
 
     def initialize_block_size(self):
-        block_size_str = utils.get_content_between(self.block_xml, self.BLOCK_SIZE_START_FLAG, self.BLOCK_SIZE_END_FLAG)
+        block_size_str = utils.get_content_between(self.block_xml, const.Block.Size.START_FLAG, const.Block.Size.END_FLAG)
         block_size_str = block_size_str.replace('"', "").split()
         self.block_size = tuple(map(lambda s: float(s), block_size_str))
 
         self.block_origin = tuple([v / 2.0 for v in self.block_size])
-        block_origin_str = self.BLOCK_ORIGIN_TEMPLATE.format(*self.block_origin)
-        self.block_xml = self.block_xml.replace(self.BLOCK_DEFAULT_ORIGIN, block_origin_str)
+        block_origin_str = const.Block.Origin.TEMPLATE.format(*self.block_origin)
+        self.block_xml = self.block_xml.replace(const.Block.Origin.DEFAULT, block_origin_str)
 
-        block_mass_str = utils.get_content_between(self.block_xml, self.BLOCK_MASS_START_FLAG, self.BLOCK_MASS_END_FLAG)
+        block_mass_str = utils.get_content_between(self.block_xml, const.Block.Mass.START_FLAG, const.Block.Mass.END_FLAG)
         block_mass_str = block_mass_str.replace('"', "").split()
         self.block_mass = float(block_mass_str[0])
 
@@ -177,8 +162,9 @@ class WorldSimulation:
         iyy = (1.0 / 12) * self.block_mass * (x*x + z*z)
         izz = (1.0 / 12) * self.block_mass * (x*x + y*y)
         self.block_inertia = (ixx, iyy, izz)
-        block_inertia_str = self.BLOCK_INERTIA_TEMPLATE.format(*self.block_inertia)
-        self.block_xml = self.block_xml.replace(self.BLOCK_INERTIA_DEFAULT, block_inertia_str)
+
+        block_inertia_str = const.Block.Inertia.TEMPLATE.format(*self.block_inertia)
+        self.block_xml = self.block_xml.replace(const.Block.Inertia.DEFAULT, block_inertia_str)
 
     def initialize_add_block(self):
         self.colors = cycle(const.Colors)
@@ -186,7 +172,7 @@ class WorldSimulation:
     def add_block_gazebo(self, pose, reference_frame, name, color=None):
         colored_xml = self.block_xml
         if color is not None:
-            colored_xml = self.block_xml.replace(self.BLOCK_DEFAULT_COLOR, self.BLOCK_COLOR_TEMPLATE.format(color))
+            colored_xml = self.block_xml.replace(const.Block.Color.DEFAULT, const.Block.Color.TEMPLATE.format(color))
         utils.add_block_gazebo(const.Gazebo.SPAWN_URDF_MODEL, colored_xml, pose, reference_frame, name)
 
     def add_block_rviz(self, pose, reference_frame, name, size):

@@ -3,7 +3,6 @@ from enum import Enum
 
 class Gazebo:
     SPAWN_URDF_MODEL = "/gazebo/spawn_urdf_model"
-    DELETE_MODEL = "/gazebo/delete_model"
     SPAWN_SDF_MODEL = "/gazebo/spawn_sdf_model"
 
 
@@ -13,3 +12,32 @@ class Colors(Enum):
     RED = "Red"
     ORANGE = "Orange"
     GREEN = "Green"
+
+
+class Block:
+    class Color:
+        DEFAULT = "<material>Gazebo/Red</material>"
+        TEMPLATE = "<material>Gazebo/{}</material>"
+
+    class Size:
+        START_FLAG = "<box size="
+        END_FLAG = "/>"
+
+    class Inertia:
+        DEFAULT = '<inertia  ixx="0.0" ixy="0.0"  ixz="0.0"  iyy="0.0"  iyz="0.0"  izz="0.0" />'
+        TEMPLATE = '<inertia  ixx="{}" ixy="0.0"  ixz="0.0"  iyy="{}"  iyz="0.0"  izz="{}" />'
+
+    class Mass:
+        START_FLAG = "<mass value="
+        END_FLAG = "/>"
+
+    class Origin:
+        DEFAULT = '<origin xyz="0.0 0.0 0.0" />'
+        TEMPLATE = '<origin xyz="{} {} {}" />'
+
+
+CAMERA_DEFAULT_NAME = "{INPUT_CAMERA_NAME}"
+
+
+BLOCK_URDF_PATH = "block/block.urdf"
+CAMERA_SDF_PATH = "kinect/model.sdf"
