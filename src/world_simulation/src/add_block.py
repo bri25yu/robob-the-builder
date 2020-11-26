@@ -39,7 +39,9 @@ def create_exploration_world(world_sim):
 
 def create_world_with_structure(world_sim):
     for square in gconst.STRUCTURE_TO_BUILD:
-        world_sim.add_square_2d(square[:-1], square[-1] * world_sim.block_size[2])
+        square = list(square)
+        square[-1] *= world_sim.block_size[2]
+        world_sim.add_square_2d(*square)
 
     for camera in gconst.CAMERAS.items():
         world_sim.add_camera(*camera)
@@ -96,8 +98,8 @@ class WorldSimulation:
         color_cycle = self.colors
 
         for (i, j), c in zip(product(indices, indices), color_cycle):
-            x = start_x + i * self.block_size[0]
-            y = start_y + (j - (side_length // 2)) * self.block_size[1]
+            x = start_x + (i - (side_length / 2)) * self.block_size[0]
+            y = start_y + (j - (side_length / 2)) * self.block_size[1]
             z = z
             pose = Pose(position=Point(x, y, z))
 
