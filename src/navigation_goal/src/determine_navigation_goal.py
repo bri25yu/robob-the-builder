@@ -9,6 +9,7 @@ import rospkg
 #TODO: remove MapMetaData, encode necessary info in parameter server?
 from nav_msgs.msg import OccupancyGrid, MapMetaData
 from geometry_msgs.msg import Point, Pose
+from navigation_goal.srv import NavGoal
 
 """
 Subscribe to map, map_header
@@ -21,7 +22,7 @@ class Nav_goal:
 
 	def __init__(self):
 		self.goal = Point(0, 0, 0)
-		self.nav_goal_service = rospy.Service('det_nav_goal', navigation_goal.srv.NavGoal, nav_goal.get_nav_goal)
+		self.nav_goal_service = rospy.Service('det_nav_goal', NavGoal, self.get_nav_goal)
 
 	def det_nav_goal(self, world_map):
 		# I don't care where I am; I only care about where i need to go
@@ -39,22 +40,27 @@ class Nav_goal:
 		for _ in range(NUM_SAMPLES):
 			col = np.random.randint(cols)
 			row = np.random.randint(rows)
-			if data[row][col] == -1:
+			if grid[row * cols + col] == -1:
 				self.goal.x = col * res + x_origin
 				self.goal.y = row * res + y_origin
 				found_unknown = True
 				break
+		print("goal is updated to " + str(self.goal.x) + ", " + str(self.goal.y))
 		if not found_unknown:
-			
+			self.nav_goal_service.shutdown()
+			rospy.signal_shutdown("Map is sufficiently explored.")
 
 
-	def get_nav_goal(self):
+
+	def get_nav_goal(self, _):
+		print("service is called")
 		return self.goal
 
 def subscribe_to_map():
 	rospy.init_node('det_nav_goal_server')
 	nav_goal = Nav_goal()
 	rospy.Subscriber("map", OccupancyGrid, nav_goal.det_nav_goal)
+	rospy.spin()
 
 if __name__ == '__main__':
 	try:
