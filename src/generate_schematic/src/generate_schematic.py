@@ -239,13 +239,12 @@ class GenerateSchematic:
         T = g[0:3, -1]
 
         #call find_corners_3d on each image
-        corners = [self.find_corners_3d(camera.image) for camera in cameras]
+        corners = self.find_corners_3d(cameras[0].image)
 
     def find_corners_3d(self, img):
         # edges = Segmentation.edge_detect_canny(img)
         #convert to grayscale and threshold so blocks appear white
         unified = self.unify_colors(img)
-
         segmented, clustered_segments, labels_bincount = self.segment(unified, segmentation_method=Segmentation.cluster_segment, n_clusters=11)
         total_labels = sum(labels_bincount)
         for i, segment in enumerate(clustered_segments):
@@ -254,18 +253,33 @@ class GenerateSchematic:
             #(has percent_data within a certain range, indicating that the cluster has boxes)
             if percent_data > .003 and percent_data < .5:
 
-                self.save_image(segment, "test_segmentation_" + str(i) + ".jpg")
+                # self.save_image(segment, "test_segmentation_" + str(i) + ".jpg")
                 gray = cv2.cvtColor(segment, cv2.COLOR_BGR2GRAY)
                 _, binary = cv2.threshold(gray, 15, 255, cv2.THRESH_BINARY)
                 binary = binary.astype(np.uint8)
                 #find contours of blocks
                 _, contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                for contour in contours:
+                    epsilon = 0.01*cv2.arcLength(contour,True)
+                    approx = cv2.approxPolyDP(contour,epsilon,True)
+                    visualization = np.ones(img.shape)
+                    cv2.drawContours(visualization,[approx],0,(0,0,255),2)
+                    print(visualization.shape)
+                    visualization = visualization.astype(np.uint8)
+                    #TODO: SMOOOTH, THEN DO CORNER DETECTION
+                    gray = cv2.cvtColor(visualization,cv2.COLOR_BGR2GRAY)
+                    gray = np.float32(gray)
+                    dst = cv2.cornerHarris(gray,2,3,0.04)
+                    visualization[dst>0.01*dst.max()]=[255,0,0]
+                    cv2.imshow("img", visualization)
+                    cv2.waitKey(0)
+                    cv2.destroyAllWindows()
+                    break
 
-
-                cv2.drawContours(img, contours, -1, (0, 255, 0), 3)
-                cv2.imshow("img", img)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
+                # cv2.drawContours(img, contours, -1, (0, 255, 0), 3)
+                # cv2.imshow("img", img)
+                # cv2.waitKey(0)
+                # cv2.destroyAllWindows()
         cv2.imshow("BottomLeftCoordinates", img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
