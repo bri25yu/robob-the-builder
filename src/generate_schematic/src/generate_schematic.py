@@ -2,7 +2,7 @@
 
 import rospy
 
-from sensor_msgs import CameraInfo
+from sensor_msgs.msg import CameraInfo
 
 import numpy as np
 
@@ -14,32 +14,38 @@ import constants as const
 
 import matplotlib.pyplot as plt
 
+from global_constants import constants as gconst
+
+import tf.transformations as tr
 
 
 IMAGE_IN_PATH = "images/gazebo_angled_image_one.jpg"
 IMAGE_OUT_NAME = "gazebo_angled_image_one_clustering.jpg"
-def main():
-    g = GenerateSchematic()
-    img = g.get_image(IMAGE_IN_PATH)
-    bottom_left_coordinates = g.find_all_bottom_left_coordinates_2d(img)
 
-    #display an image with bottom left coordinates highlighted in white
-    for coordinates in bottom_left_coordinates:
-        cv2.circle(img, coordinates, 3, (255, 255, 255), -1)
-    cv2.imshow("BottomLeftCoordinates", img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+def main():
+    rospy.init_node("schematic_node", anonymous = True)
+    g = GenerateSchematic()
+    g.match_images([2, 3])
+    # img = g.get_image(IMAGE_IN_PATH)
+    # bottom_left_coordinates = g.find_all_bottom_left_coordinates_2d(img)
+    #
+    # #display an image with bottom left coordinates highlighted in white
+    # for coordinates in bottom_left_coordinates:
+    #     cv2.circle(img, coordinates, 3, (255, 255, 255), -1)
+    # cv2.imshow("BottomLeftCoordinates", img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
 
 class CameraDTO:
     TOPIC_TEMPLATE = "/camera{}/color/camera_info"
 
-    def __init__(self, index, pose, intrinsic_matrix=None, image=None):
+    def __init__(self, index, pose=None, intrinsic_matrix=None, image=None):
         """
         Parameters
         ----------
         index: int
-        pose: geometryMsgs/PoseStamped
+        pose: geometryMsgs/Pose
         intrinsic_matrix: np.ndarray
                 [fx  0 cx]
             K = [ 0 fy cy]
@@ -55,6 +61,8 @@ class CameraDTO:
         self.initialize()
 
     def initialize(self):
+        if self.pose is None:
+            self.pose = gconst.CAMERAS["camera{}".format(self.index)]
         if self.intrinsic_matrix is None:
             self.get_intrinsic_matrix()
         if self.image is None:
@@ -192,7 +200,9 @@ class GenerateSchematic:
         uniform_img : ndarray
         """
         sums = np.reshape(np.sum(img, axis = 2), (img.shape[0], img.shape[1], 1)).astype(np.float32)
+        sums[sums == 0] = 0.01
         return (img/sums * 255).astype(np.uint8)
+
 
     def match_images(self, image_indices):
         """
@@ -203,7 +213,7 @@ class GenerateSchematic:
 
         TODO:
         1. DONE Get intrinsic camera matrices from urdf file
-        2. Get R and T transform between cameras
+        2. DONE Get R and T transform between cameras
         3. Fill in find_corners_3d to find corners in each image
         4. Given corners in each image, find corners that match in both images
         5. Use least squares triangulate to find 3d coordinates of these corners
@@ -211,11 +221,55 @@ class GenerateSchematic:
         7. Reconstruct positions of blocks from 3d coordinates of corners
 
         """
-        cameras = [CameraDto()]
+        cameras = [CameraDTO(index) for index in image_indices]
+
+        #calculate R/T transform between cameras
+        firstPose = cameras[0].pose
+        secondPose = cameras[1].pose
+        transDifference = [secondPose.position.x - firstPose.position.x,
+                            secondPose.position.y - firstPose.position.y,
+                            secondPose.position.z - firstPose.position.z]
+        orientationDifference = [secondPose.orientation.x - firstPose.orientation.x,
+                                secondPose.orientation.y - firstPose.orientation.y,
+                                secondPose.orientation.z - firstPose.orientation.z,
+                                secondPose.orientation.w - firstPose.orientation.w]
+        g = tr.quaternion_matrix(orientationDifference)
+        g[0:3, -1] = transDifference
+        R = g[0:3, 0:3]
+        T = g[0:3, -1]
+
+        #call find_corners_3d on each image
+        corners = [self.find_corners_3d(camera.image) for camera in cameras]
 
     def find_corners_3d(self, img):
+        # edges = Segmentation.edge_detect_canny(img)
+        #convert to grayscale and threshold so blocks appear white
+        unified = self.unify_colors(img)
+
+        segmented, clustered_segments, labels_bincount = self.segment(unified, segmentation_method=Segmentation.cluster_segment, n_clusters=11)
+        total_labels = sum(labels_bincount)
+        for i, segment in enumerate(clustered_segments):
+            percent_data = labels_bincount[i]/float(total_labels)
+            #if this is a cluster we want to look at
+            #(has percent_data within a certain range, indicating that the cluster has boxes)
+            if percent_data > .003 and percent_data < .5:
+
+                self.save_image(segment, "test_segmentation_" + str(i) + ".jpg")
+                gray = cv2.cvtColor(segment, cv2.COLOR_BGR2GRAY)
+                _, binary = cv2.threshold(gray, 15, 255, cv2.THRESH_BINARY)
+                binary = binary.astype(np.uint8)
+                #find contours of blocks
+                _, contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+
+                cv2.drawContours(img, contours, -1, (0, 255, 0), 3)
+                cv2.imshow("img", img)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+        cv2.imshow("BottomLeftCoordinates", img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
         #cluster image by color and find contours, then find corners in contour
-        pass
 
 
 class Segmentation:
