@@ -12,6 +12,8 @@ import cv2
 
 import constants as const
 
+import image_matching as matching
+
 import matplotlib.pyplot as plt
 
 from global_constants import constants as gconst
@@ -70,7 +72,7 @@ class CameraDTO:
 
     def get_intrinsic_matrix(self):
         camera_info = rospy.wait_for_message(CameraDTO.TOPIC_TEMPLATE.format(self.index), CameraInfo)
-        self.intrinsic_matrix = camera_info.K
+        self.intrinsic_matrix = np.reshape(camera_info.K, (3, 3))
 
     def get_raw_image(self):
         # See GenerateSchematic.get_image
@@ -226,21 +228,41 @@ class GenerateSchematic:
         #calculate R/T transform between cameras
         firstPose = cameras[0].pose
         secondPose = cameras[1].pose
-        transDifference = [secondPose.position.x - firstPose.position.x,
-                            secondPose.position.y - firstPose.position.y,
-                            secondPose.position.z - firstPose.position.z]
-        orientationDifference = [secondPose.orientation.x - firstPose.orientation.x,
-                                secondPose.orientation.y - firstPose.orientation.y,
-                                secondPose.orientation.z - firstPose.orientation.z,
-                                secondPose.orientation.w - firstPose.orientation.w]
-        g = tr.quaternion_matrix(orientationDifference)
-        g[0:3, -1] = transDifference
+        g1 = tr.quaternion_matrix([firstPose.orientation.x, firstPose.orientation.y, firstPose.orientation.z, firstPose.orientation.w])
+        g1[0:3, -1] = [firstPose.position.x, firstPose.position.y, firstPose.position.z]
+        g2 = tr.quaternion_matrix([secondPose.orientation.x, secondPose.orientation.y, secondPose.orientation.z, secondPose.orientation.w])
+        g2[0:3, -1] = [secondPose.position.x, secondPose.position.y, secondPose.position.z]
+        g = np.matmul(g2, np.linalg.inv(g1))
         R = g[0:3, 0:3]
         T = g[0:3, -1]
-
+        print("R", R)
+        print("T", T)
+        
         #call find_corners_3d on each image
-        first_corners = self.find_corners_3d(cameras[0].image)
-        corners = self.find_corners_3d(cameras[1].image)
+        # corners = [self.find_corners_3d(camera.image) for camera in cameras]
+        # first_corners = self.find_corners_3d(cameras[0].image)
+        # second_corners = self.find_corners_3d(cameras[1].image)
+
+        #find matching corners in both images
+        orb = cv2.ORB_create()
+        # first_keypoints = []
+        # second_keypoints = []
+        # first_keypoints = [cv2.KeyPoint(x=corner[0], y=corner[1], _size=10) for corner in corners[0]]
+        # second_keypoints = [cv2.KeyPoint(x=corner[0], y=corner[1], _size=10) for corner in corners[1]]
+        first_keypoints, first_descriptors = orb.detectAndCompute(cameras[0].image, None)
+        second_keypoints, second_descriptors = orb.detectAndCompute(cameras[1].image, None)
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+        matches = bf.match(first_descriptors, second_descriptors)
+        inlier_mask = np.array(matching.FilterByEpipolarConstraint(cameras[0].intrinsic_matrix, cameras[1].intrinsic_matrix, first_keypoints, second_keypoints, R, T, .6, matches)) == 1
+        filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
+        print(len(filtered_matches))
+        filtered_matches = sorted(filtered_matches, key = lambda x:x.distance)
+        img = cv2.drawMatches(cameras[0].image,first_keypoints,cameras[1].image,second_keypoints,
+                filtered_matches[:10],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+        plt.imshow(img)
+        plt.show()
+        # for point in first_corners:
+
 
 
     def find_corners_3d(self, img):
@@ -262,9 +284,9 @@ class GenerateSchematic:
 
         for corner in corners:
              cv2.circle(img, corner, 3, (255, 255, 255), -1)
-        cv2.imshow("CornerCoordinates", img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.imshow("CornerCoordinates", img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         return corners
 
 

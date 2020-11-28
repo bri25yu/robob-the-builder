@@ -11,8 +11,6 @@ import message_filters
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2
 from geometry_msgs.msg import PoseStamped
 import cv2
-import ros_numpy
-from ros_numpy import numpy_msg
 import numpy as np
 import tf.transformations as transformations
 import tf2_ros as tf2
