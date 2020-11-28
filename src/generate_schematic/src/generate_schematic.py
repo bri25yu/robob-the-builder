@@ -239,7 +239,8 @@ class GenerateSchematic:
         T = g[0:3, -1]
 
         #call find_corners_3d on each image
-        corners = self.find_corners_3d(cameras[0].image)
+        first_corners = self.find_corners_3d(cameras[0].image)
+        corners = self.find_corners_3d(cameras[1].image)
 
 
     def find_corners_3d(self, img):
@@ -253,63 +254,19 @@ class GenerateSchematic:
             percent_data = labels_bincount[i]/float(total_labels)
             #if this is a cluster we want to look at
             #(has percent_data within a certain range, indicating that the cluster has boxes)
-            copied = img.copy()
             if percent_data > .003 and percent_data < .5:
-                print(percent_data)
-                segment_corners = []
-                self.save_image(segment, "segmentation_" + str(i) + ".jpg")
-
-
                 gray = cv2.cvtColor(segment, cv2.COLOR_BGR2GRAY)
-                _, binary = cv2.threshold(gray, 15, 255, cv2.THRESH_BINARY)
-                binary = binary.astype(np.uint8)
-
-                #find contours of blocks
-                _, contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                colored = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-                cv2.drawContours(colored, contours, -1, (0,255,0), 3)
-                #cv2 good features to track
-                print(int(percent_data * 900))
-                features = cv2.goodFeaturesToTrack(gray, int(percent_data * 900), .01, 10)
+                features = cv2.goodFeaturesToTrack(gray, 6, .01, 10)
                 for feature in features:
-                    cv2.circle(copied, (feature[0][0], feature[0][1]), 3, (0, 255, 255), -1)
                     corners.append((feature[0][0], feature[0][1]))
-                cv2.imshow("contours", copied)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
-                # for contour in contours:
-                #     #find slopes of lines of corners and look for change in slope
-                #     for i in range(len(contour)):
-                #         if i % 3 == 0:
-                #             if i - 3 >= 0 and i + 3 < len(contour):
-                #                 print(contour[i][0])
-                #                 first_point = contour[i - 3][0]
-                #                 second_point = contour[i][0]
-                #                 third_point = contour[i + 3][0]
-                #                 first_slope = self.slope(first_point, second_point)
-                #                 second_slope = self.slope(second_point, third_point)
-                #                 print("first_slope", first_slope)
-                #                 print("second slope", second_slope)
-                #                 if(abs(second_slope - first_slope) > 10):
-                #                     segment_corners.append((second_point[0], second_point[1]))
-
-                # corners.extend(segment_corners)
-                # cv2.drawContours(img, contours, -1, (0, 255, 0), 3)
-                # cv2.imshow("img", img)
-                # cv2.waitKey(0)
-                # cv2.destroyAllWindows()
 
         for corner in corners:
              cv2.circle(img, corner, 3, (255, 255, 255), -1)
         cv2.imshow("CornerCoordinates", img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-        #cluster image by color and find contours, then find corners in contour
+        return corners
 
-    def slope(self, point_one, point_two):
-        if point_one[0] == point_two[0]:
-            return 1000
-        return (point_two[1] - point_one[1])/float(point_two[0] - point_one[0])
 
 
 class Segmentation:
