@@ -232,14 +232,14 @@ class GenerateSchematic:
         g1[0:3, -1] = [firstPose.position.x, firstPose.position.y, firstPose.position.z]
         g2 = tr.quaternion_matrix([secondPose.orientation.x, secondPose.orientation.y, secondPose.orientation.z, secondPose.orientation.w])
         g2[0:3, -1] = [secondPose.position.x, secondPose.position.y, secondPose.position.z]
-        g = np.matmul(g2, np.linalg.inv(g1))
+        g = np.matmul(g1, np.linalg.inv(g2))
         R = g[0:3, 0:3]
         T = g[0:3, -1]
         print("R", R)
         print("T", T)
-        
+
         #call find_corners_3d on each image
-        # corners = [self.find_corners_3d(camera.image) for camera in cameras]
+        corners = [self.find_corners_3d(camera.image) for camera in cameras]
         # first_corners = self.find_corners_3d(cameras[0].image)
         # second_corners = self.find_corners_3d(cameras[1].image)
 
@@ -247,18 +247,17 @@ class GenerateSchematic:
         orb = cv2.ORB_create()
         # first_keypoints = []
         # second_keypoints = []
-        # first_keypoints = [cv2.KeyPoint(x=corner[0], y=corner[1], _size=10) for corner in corners[0]]
-        # second_keypoints = [cv2.KeyPoint(x=corner[0], y=corner[1], _size=10) for corner in corners[1]]
-        first_keypoints, first_descriptors = orb.detectAndCompute(cameras[0].image, None)
-        second_keypoints, second_descriptors = orb.detectAndCompute(cameras[1].image, None)
+        first_keypoints = [cv2.KeyPoint(x=corner[0], y=corner[1], _size=100) for corner in corners[0]]
+        second_keypoints = [cv2.KeyPoint(x=corner[0], y=corner[1], _size=100) for corner in corners[1]]
+        _, first_descriptors = orb.compute(cameras[0].image, first_keypoints)
+        _, second_descriptors = orb.compute(cameras[1].image, second_keypoints)
         bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
         matches = bf.match(first_descriptors, second_descriptors)
-        inlier_mask = np.array(matching.FilterByEpipolarConstraint(cameras[0].intrinsic_matrix, cameras[1].intrinsic_matrix, first_keypoints, second_keypoints, R, T, .6, matches)) == 1
+        inlier_mask = np.array(matching.FilterByEpipolarConstraint(cameras[0].intrinsic_matrix, cameras[1].intrinsic_matrix, first_keypoints, second_keypoints, R, T, .2, matches)) == 1
         filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
         print(len(filtered_matches))
-        filtered_matches = sorted(filtered_matches, key = lambda x:x.distance)
         img = cv2.drawMatches(cameras[0].image,first_keypoints,cameras[1].image,second_keypoints,
-                filtered_matches[:10],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+                filtered_matches[:5],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
         plt.imshow(img)
         plt.show()
         # for point in first_corners:
@@ -282,8 +281,8 @@ class GenerateSchematic:
                 for feature in features:
                     corners.append((feature[0][0], feature[0][1]))
 
-        for corner in corners:
-             cv2.circle(img, corner, 3, (255, 255, 255), -1)
+        # for corner in corners:
+        #      cv2.circle(img, corner, 3, (255, 255, 255), -1)
         # cv2.imshow("CornerCoordinates", img)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
