@@ -289,23 +289,22 @@ class GenerateSchematic:
 class Segmentation:
 
     @staticmethod
-    def edge_detect_canny(img, min_val=100, max_val=200):
+    def edge_detect_canny(img, sigma=0.33):
         """
         Perform Canny edge detection.
         See https://opencv-python-tutroals.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_canny/py_canny.html
 
         Parameters
         ----------
-        gray_img : ndarray
-            grayscale image array
+        img: np.ndarray
 
         Returns
         -------
-        ndarray
-            gray_img with edges outlined
+        edges: np.ndarray
+            The edges of the input img. 
+
         """
         gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        sigma = .33
         v = np.median(gray_img)
 
         #---- apply automatic Canny edge detection using the computed median----
