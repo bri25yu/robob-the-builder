@@ -12,6 +12,13 @@ class Colors(Enum):
     RED = "Red"
     ORANGE = "Orange"
     GREEN = "Green"
+    DARKGRAY = "DarkGrey"
+    REDBRIGHT = "RedBright"
+    SKYBLUE = "SkyBlue"
+    YELLOW = "Yellow"
+    INDIGO = "Indigo"
+    PURPLE = "Purple"
+    TURQUOISE = "Turquoise"
 
 
 class Block:

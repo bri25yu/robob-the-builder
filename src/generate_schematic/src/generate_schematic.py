@@ -238,30 +238,20 @@ class GenerateSchematic:
         print("R", R)
         print("T", T)
 
-        #call find_corners_3d on each image
-        corners = [self.find_corners_3d(camera.image) for camera in cameras]
-        # first_corners = self.find_corners_3d(cameras[0].image)
-        # second_corners = self.find_corners_3d(cameras[1].image)
-
         #find matching corners in both images
         orb = cv2.ORB_create()
-        # first_keypoints = []
-        # second_keypoints = []
-        first_keypoints = [cv2.KeyPoint(x=corner[0], y=corner[1], _size=100) for corner in corners[0]]
-        second_keypoints = [cv2.KeyPoint(x=corner[0], y=corner[1], _size=100) for corner in corners[1]]
-        _, first_descriptors = orb.compute(cameras[0].image, first_keypoints)
-        _, second_descriptors = orb.compute(cameras[1].image, second_keypoints)
+        first_keypoints, first_descriptors = orb.detectAndCompute(cameras[0].image, None)
+        second_keypoints, second_descriptors = orb.detectAndCompute(cameras[1].image, None)
         bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
         matches = bf.match(first_descriptors, second_descriptors)
-        inlier_mask = np.array(matching.FilterByEpipolarConstraint(cameras[0].intrinsic_matrix, cameras[1].intrinsic_matrix, first_keypoints, second_keypoints, R, T, .2, matches)) == 1
-        filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
-        print(len(filtered_matches))
-        img = cv2.drawMatches(cameras[0].image,first_keypoints,cameras[1].image,second_keypoints,
-                filtered_matches[:5],None,flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-        plt.imshow(img)
-        plt.show()
-        # for point in first_corners:
 
+        inlier_mask = np.array(matching.FilterByEpipolarConstraint(cameras[0].intrinsic_matrix, cameras[1].intrinsic_matrix, first_keypoints, second_keypoints, R, T, .11, matches)) == 1
+        filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
+
+        print(len(filtered_matches))
+        img3 = cv2.drawMatches(cameras[0].image,first_keypoints,cameras[1].image,second_keypoints,filtered_matches,None, flags=2)
+        plt.imshow(img3)
+        plt.show()
 
 
     def find_corners_3d(self, img):
@@ -273,11 +263,14 @@ class GenerateSchematic:
         corners = []
         for i, segment in enumerate(clustered_segments):
             percent_data = labels_bincount[i]/float(total_labels)
+            print(i)
+            print(percent_data)
             #if this is a cluster we want to look at
             #(has percent_data within a certain range, indicating that the cluster has boxes)
-            if percent_data > .003 and percent_data < .5:
+            self.save_image(segment, "segmented_" + str(i) + ".jpg")
+            if percent_data > .001 and percent_data < .5:
                 gray = cv2.cvtColor(segment, cv2.COLOR_BGR2GRAY)
-                features = cv2.goodFeaturesToTrack(gray, 6, .01, 10)
+                features = cv2.goodFeaturesToTrack(gray, 4, .01, 10)
                 for feature in features:
                     corners.append((feature[0][0], feature[0][1]))
 
