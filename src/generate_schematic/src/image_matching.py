@@ -102,9 +102,6 @@ def FilterByEpipolarConstraint(intrinsics1, intrinsics2, points1, points2, R, T,
 
 
 
-def do_least_squares(A, T):
-    return np.linalg.inv(A.T.dot(A)).dot(A.T).dot(T)
-
 def least_squares_triangulate(x_1, x_2, R, T, left_intrinsic, right_intrinsic):
     """
     Task 3
@@ -119,21 +116,23 @@ def least_squares_triangulate(x_1, x_2, R, T, left_intrinsic, right_intrinsic):
     left_intrinsic and right_intrinsic are both numpy arrays of size (3, 3) representing the
     3x3 intrinsic matrices of the left and right cameras respectively.
     """
-
     # Remove this return statement once you implement this function.
     # return None
 
     left_intrinsic_inv = np.linalg.inv(left_intrinsic)
     right_intrinsic_inv = np.linalg.inv(right_intrinsic)
-
-    A = np.hstack((-R.dot(x_1), x_2))
-
+    x_1 = np.reshape(x_1, (3, 1))
+    x_2 = np.reshape(x_2, (3, 1))
+    x_1 = np.matmul(left_intrinsic_inv, x_1)
+    x_2 = np.matmul(right_intrinsic_inv, x_2)
+    A = np.concatenate((-np.matmul(R, x_1), x_2), axis = 1)
     # Use least squares to solve for lambda1 and lambda2.
-    lambda_1, lambda_2 = do_least_squares(A, T)
-
+    lambda_1, lambda_2 = np.linalg.lstsq(A, T)[0]
+    x_1 = np.reshape(x_1, (3,))
+    x_2 = np.reshape(x_2, (3,))
     if lambda_1 > 0 and lambda_2 > 0:
         X1 = lambda_2 * x_2
-        X2 = lambda_1  * R.dot(x_1) + T
+        X2 = (lambda_1  * np.matmul(R, x_1)) + T
         X = .5 * (X1 + X2)
         return X
     else:

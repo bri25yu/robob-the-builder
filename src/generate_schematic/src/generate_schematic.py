@@ -27,7 +27,7 @@ IMAGE_OUT_NAME = "gazebo_angled_image_one_clustering.jpg"
 def main():
     rospy.init_node("schematic_node", anonymous = True)
     g = GenerateSchematic()
-    g.match_images([2, 3])
+    coordinates = g.match_images([2, 3])
     # img = g.get_image(IMAGE_IN_PATH)
     # bottom_left_coordinates = g.find_all_bottom_left_coordinates_2d(img)
     #
@@ -205,6 +205,13 @@ class GenerateSchematic:
         sums[sums == 0] = 0.01
         return (img/sums * 255).astype(np.uint8)
 
+    def get_matched_3d_coordinates(self, left_matches, right_matches, R, T, left_intrinsic, right_intrinsic):
+        coordinates = []
+        for i in range(len(left_matches)):
+            result = matching.least_squares_triangulate(left_matches[i] + (1,), right_matches[i] + (1,), R, T, left_intrinsic, right_intrinsic)
+            if result is not None:
+                coordinates.append(result)
+        return coordinates
 
     def match_images(self, image_indices):
         """
@@ -247,11 +254,34 @@ class GenerateSchematic:
 
         inlier_mask = np.array(matching.FilterByEpipolarConstraint(cameras[0].intrinsic_matrix, cameras[1].intrinsic_matrix, first_keypoints, second_keypoints, R, T, .11, matches)) == 1
         filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
+        left_matches = [first_keypoints[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))]
+        right_matches = [second_keypoints[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))]
 
-        print(len(filtered_matches))
-        img3 = cv2.drawMatches(cameras[0].image,first_keypoints,cameras[1].image,second_keypoints,filtered_matches,None, flags=2)
-        plt.imshow(img3)
+        coordinates = self.get_matched_3d_coordinates(left_matches, right_matches, R, T, cameras[0].intrinsic_matrix, cameras[1].intrinsic_matrix)
+
+        coordinates = np.reshape(coordinates, (len(coordinates), 3))
+        from mpl_toolkits.mplot3d import Axes3D
+        import random
+
+        fig = plt.figure()
+        ax = Axes3D(fig)
+
+        sequence_containing_x_vals = coordinates[:, 0]
+        sequence_containing_y_vals = coordinates[:, 1]
+        sequence_containing_z_vals = coordinates[:, 2]
+
+        random.shuffle(sequence_containing_x_vals)
+        random.shuffle(sequence_containing_y_vals)
+        random.shuffle(sequence_containing_z_vals)
+
+        ax.scatter(sequence_containing_x_vals, sequence_containing_y_vals, sequence_containing_z_vals)
         plt.show()
+
+
+        return coordinates
+        # img3 = cv2.drawMatches(cameras[0].image,first_keypoints,cameras[1].image,second_keypoints,filtered_matches,None, flags=2)
+        # plt.imshow(img3)
+        # plt.show()
 
 
     def find_corners_3d(self, img):
