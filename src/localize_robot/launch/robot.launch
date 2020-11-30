@@ -13,7 +13,7 @@
   <arg name="camera_model"  default="orbbec-astra"/>
 
 	<!-- World Parameters -->
-	<arg name="world"  default="empty"/>
+	<arg name="world"  default="simple_office"/>
   <arg name="gzpose" default="-x 0.0 -y 0.0 -z 0.0 -R 0.0 -P 0.0 -Y 0.0"/>
   <arg name="tuck_arm"  default="true"/>
 
@@ -38,17 +38,45 @@
 		<arg name="extra_gazebo_args" value="$(arg extra_gazebo_args)"/>
 	</include>
 
-	<group if="$(arg gmapping)">
+	<!-- <group if="$(arg gmapping)">
 		<include file="$(find localize_robot)/launch/localize_gmapping.launch">
-		</include>
+		</include> -->
 
-    <node name="rviz" pkg="rviz" type="rviz"
-      args="-d $(find tiago_2dnav)/config/rviz/navigation_public_sim.rviz"/>
+  <node pkg="gmapping" type="slam_gmapping" name="slam" output="screen" >
+    <remap from="scan" to="scan_raw" />
+    <?ignore
+      <param name="odom_frame" value="/mobile_base_controller/odom" />
+    ?>
+    <param name="base_frame" value="base_footprint" />
+    <param name="xmin" value="0" />
+    <param name="ymin" value="0" />
+    <param name="xmax" value="400.0" />
+    <param name="ymax" value="400.0" />
+  </node>
+
+  <node name="rviz" pkg="rviz" type="rviz"
+    args="-d $(find tiago_2dnav)/config/rviz/navigation_public_sim.rviz"/> 
+<!-- 
+  <node name="map_server" pkg="map_server" type="map_server" 
+    args="$(env HOME)/.pal/tiago_maps/configurations/test_so/map.yaml"/> -->
+
+  <node name="amcl" pkg="amcl" type="amcl">
+    <param name="use_map_topic" value="true" />
+    <remap from="scan" to="scan_raw" />
+  </node>
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam file="$(find localize_robot)/parameters/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find localize_robot)/parameters/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find localize_robot)/parameters/local_costmap_params.yaml" command="load"/>
+    <rosparam file="$(find localize_robot)/parameters/global_costmap_params.yaml" command="load"/>
+    <rosparam file="$(find localize_robot)/parameters/base_local_planner_params.yaml" command="load"/>
+  </node>
 
     <!-- pointcloud to laserscan-->
-    <include file="$(find tiago_laser_sensors)/launch/rgbd_cloud_laser.launch">
+    <!-- <include file="$(find tiago_laser_sensors)/launch/rgbd_cloud_laser.launch">
         <arg name="cloud" value="/xtion/depth_registered/points"/>
     </include>
-	</group>
+	</group> -->
 
 </launch>

@@ -12,6 +12,8 @@ import cv2
 
 import constants as const
 
+import image_matching as matching
+
 import matplotlib.pyplot as plt
 
 from global_constants import constants as gconst
@@ -25,7 +27,7 @@ IMAGE_OUT_NAME = "gazebo_angled_image_one_clustering.jpg"
 def main():
     rospy.init_node("schematic_node", anonymous = True)
     g = GenerateSchematic()
-    g.match_images([2, 3])
+    coordinates = g.match_images([2, 3])
     # img = g.get_image(IMAGE_IN_PATH)
     # bottom_left_coordinates = g.find_all_bottom_left_coordinates_2d(img)
     #
@@ -70,7 +72,7 @@ class CameraDTO:
 
     def get_intrinsic_matrix(self):
         camera_info = rospy.wait_for_message(CameraDTO.TOPIC_TEMPLATE.format(self.index), CameraInfo)
-        self.intrinsic_matrix = camera_info.K
+        self.intrinsic_matrix = np.reshape(camera_info.K, (3, 3))
 
     def get_raw_image(self):
         # See GenerateSchematic.get_image
@@ -203,6 +205,13 @@ class GenerateSchematic:
         sums[sums == 0] = 0.01
         return (img/sums * 255).astype(np.uint8)
 
+    def get_matched_3d_coordinates(self, left_matches, right_matches, R, T, left_intrinsic, right_intrinsic):
+        coordinates = []
+        for i in range(len(left_matches)):
+            result = matching.least_squares_triangulate(left_matches[i] + (1,), right_matches[i] + (1,), R, T, left_intrinsic, right_intrinsic)
+            if result is not None:
+                coordinates.append(result)
+        return coordinates
 
     def match_images(self, image_indices):
         """
@@ -226,20 +235,54 @@ class GenerateSchematic:
         #calculate R/T transform between cameras
         firstPose = cameras[0].pose
         secondPose = cameras[1].pose
-        transDifference = [secondPose.position.x - firstPose.position.x,
-                            secondPose.position.y - firstPose.position.y,
-                            secondPose.position.z - firstPose.position.z]
-        orientationDifference = [secondPose.orientation.x - firstPose.orientation.x,
-                                secondPose.orientation.y - firstPose.orientation.y,
-                                secondPose.orientation.z - firstPose.orientation.z,
-                                secondPose.orientation.w - firstPose.orientation.w]
-        g = tr.quaternion_matrix(orientationDifference)
-        g[0:3, -1] = transDifference
+        g1 = tr.quaternion_matrix([firstPose.orientation.x, firstPose.orientation.y, firstPose.orientation.z, firstPose.orientation.w])
+        g1[0:3, -1] = [firstPose.position.x, firstPose.position.y, firstPose.position.z]
+        g2 = tr.quaternion_matrix([secondPose.orientation.x, secondPose.orientation.y, secondPose.orientation.z, secondPose.orientation.w])
+        g2[0:3, -1] = [secondPose.position.x, secondPose.position.y, secondPose.position.z]
+        g = np.matmul(g1, np.linalg.inv(g2))
         R = g[0:3, 0:3]
         T = g[0:3, -1]
+        print("R", R)
+        print("T", T)
 
-        #call find_corners_3d on each image
-        corners = self.find_corners_3d(cameras[0].image)
+        #find matching corners in both images
+        orb = cv2.ORB_create()
+        first_keypoints, first_descriptors = orb.detectAndCompute(cameras[0].image, None)
+        second_keypoints, second_descriptors = orb.detectAndCompute(cameras[1].image, None)
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+        matches = bf.match(first_descriptors, second_descriptors)
+
+        inlier_mask = np.array(matching.FilterByEpipolarConstraint(cameras[0].intrinsic_matrix, cameras[1].intrinsic_matrix, first_keypoints, second_keypoints, R, T, .11, matches)) == 1
+        filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
+        left_matches = [first_keypoints[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))]
+        right_matches = [second_keypoints[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))]
+
+        coordinates = self.get_matched_3d_coordinates(left_matches, right_matches, R, T, cameras[0].intrinsic_matrix, cameras[1].intrinsic_matrix)
+
+        coordinates = np.reshape(coordinates, (len(coordinates), 3))
+        from mpl_toolkits.mplot3d import Axes3D
+        import random
+
+        fig = plt.figure()
+        ax = Axes3D(fig)
+
+        sequence_containing_x_vals = coordinates[:, 0]
+        sequence_containing_y_vals = coordinates[:, 1]
+        sequence_containing_z_vals = coordinates[:, 2]
+
+        random.shuffle(sequence_containing_x_vals)
+        random.shuffle(sequence_containing_y_vals)
+        random.shuffle(sequence_containing_z_vals)
+
+        ax.scatter(sequence_containing_x_vals, sequence_containing_y_vals, sequence_containing_z_vals)
+        plt.show()
+
+
+        return coordinates
+        # img3 = cv2.drawMatches(cameras[0].image,first_keypoints,cameras[1].image,second_keypoints,filtered_matches,None, flags=2)
+        # plt.imshow(img3)
+        # plt.show()
+
 
     def find_corners_3d(self, img):
         # edges = Segmentation.edge_detect_canny(img)
@@ -247,43 +290,27 @@ class GenerateSchematic:
         unified = self.unify_colors(img)
         segmented, clustered_segments, labels_bincount = self.segment(unified, segmentation_method=Segmentation.cluster_segment, n_clusters=11)
         total_labels = sum(labels_bincount)
+        corners = []
         for i, segment in enumerate(clustered_segments):
             percent_data = labels_bincount[i]/float(total_labels)
+            print(i)
+            print(percent_data)
             #if this is a cluster we want to look at
             #(has percent_data within a certain range, indicating that the cluster has boxes)
-            if percent_data > .003 and percent_data < .5:
-
-                # self.save_image(segment, "test_segmentation_" + str(i) + ".jpg")
+            self.save_image(segment, "segmented_" + str(i) + ".jpg")
+            if percent_data > .001 and percent_data < .5:
                 gray = cv2.cvtColor(segment, cv2.COLOR_BGR2GRAY)
-                _, binary = cv2.threshold(gray, 15, 255, cv2.THRESH_BINARY)
-                binary = binary.astype(np.uint8)
-                #find contours of blocks
-                _, contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                for contour in contours:
-                    epsilon = 0.01*cv2.arcLength(contour,True)
-                    approx = cv2.approxPolyDP(contour,epsilon,True)
-                    visualization = np.ones(img.shape)
-                    cv2.drawContours(visualization,[approx],0,(0,0,255),2)
-                    print(visualization.shape)
-                    visualization = visualization.astype(np.uint8)
-                    #TODO: SMOOOTH, THEN DO CORNER DETECTION
-                    gray = cv2.cvtColor(visualization,cv2.COLOR_BGR2GRAY)
-                    gray = np.float32(gray)
-                    dst = cv2.cornerHarris(gray,2,3,0.04)
-                    visualization[dst>0.01*dst.max()]=[255,0,0]
-                    cv2.imshow("img", visualization)
-                    cv2.waitKey(0)
-                    cv2.destroyAllWindows()
-                    break
+                features = cv2.goodFeaturesToTrack(gray, 4, .01, 10)
+                for feature in features:
+                    corners.append((feature[0][0], feature[0][1]))
 
-                # cv2.drawContours(img, contours, -1, (0, 255, 0), 3)
-                # cv2.imshow("img", img)
-                # cv2.waitKey(0)
-                # cv2.destroyAllWindows()
-        cv2.imshow("BottomLeftCoordinates", img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        #cluster image by color and find contours, then find corners in contour
+        # for corner in corners:
+        #      cv2.circle(img, corner, 3, (255, 255, 255), -1)
+        # cv2.imshow("CornerCoordinates", img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        return corners
+
 
 
 class Segmentation:
