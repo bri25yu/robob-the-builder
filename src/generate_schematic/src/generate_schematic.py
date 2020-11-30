@@ -156,37 +156,44 @@ class GenerateSchematic:
             results.append((min_x, max_y))
         return results
 
-    def find_all_bottom_left_coordinates_2d(self, img):
+    def find_all_bottom_left_coordinates_2d(self, img, num_clusters=11, save=False, low=0.001, high=0.5):
         """
+        Given an image that is only 2d, find and return all of the bottom left corners of blocks in the image.
+
         Parameters
         ----------
-        img : np.ndarray
+        img: np.ndarray
             Image with blocks to find bottom left block coordinates from.
             The blocks may be different colors.
+        num_clusters: int
+            The number of clusters to cluster around.
 
         Returns
         -------
-        results : np.ndarray
+        bottom_left_coordinates: np.ndarray
             An array of bottom left block coordinates in the image
+
         """
-        #perform clustering to divide image into groups of the same color
-        NUM_CLUSTERS = 11
-        clustered_segments, labels_bincount = self.segment(img, segmentation_method=Segmentation.cluster_segment, n_clusters=NUM_CLUSTERS)
-        for i, segment in enumerate(clustered_segments):
-            #save each cluster to a separate image
-            self.save_image(segment, IMAGE_OUT_NAME + "_" + str(i) + ".jpg")
-        #labels_bincount represents the number of pixels in each cluster
+        # Perform clustering to divide image into groups of the same color
+        clustered_segments, labels_bincount = self.segment(img, segmentation_method=Segmentation.cluster_segment, n_clusters=num_clusters)
+
+        if save:
+            for i, segment in enumerate(clustered_segments):
+                # Save each cluster to a separate image
+                self.save_image(segment, IMAGE_OUT_NAME + "_" + str(i) + ".jpg")
+
+        # labels_bincount represents the number of pixels in each cluster
         total_labels = sum(labels_bincount)
         bottom_left_coordinates = []
-        for i in range(NUM_CLUSTERS):
+        for i in range(num_clusters):
             percent_data = labels_bincount[i]/float(total_labels)
-            #if this is a cluster we want to look at
-            #(has percent_data within a certain range, indicating that the cluster has boxes)
-            if percent_data > .001 and percent_data < .5:
-                #read image and find its bottom left block coordinates
-                path_to_image = "images/" + IMAGE_OUT_NAME + "_" + str(i) + ".jpg"
-                image_bottom_left_coordinates = self.find_image_bottom_left_coordinates_2d(self.get_image(path_to_image))
+            # If this is a cluster we want to look at i.e. it has percent_data within a certain range,
+            # indicating that the cluster has boxes but is not a background
+            if low < percent_data < high:
+                # Find its bottom left block coordinates
+                image_bottom_left_coordinates = self.find_image_bottom_left_coordinates_2d(clustered_segments[i])
                 bottom_left_coordinates.extend(image_bottom_left_coordinates)
+
         return bottom_left_coordinates
 
     def unify_colors(self, img):
