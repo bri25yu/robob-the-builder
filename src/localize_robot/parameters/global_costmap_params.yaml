@@ -2,7 +2,7 @@ global_costmap:
   global_frame: map
   robot_base_frame: base_link
   update_frequency: 2.0
-  static_map: true
+  static_map: false
   rolling_window: true # Follow robot while navigating
   width: 400
   height: 400

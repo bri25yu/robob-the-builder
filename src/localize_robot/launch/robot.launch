@@ -42,11 +42,23 @@
 		<include file="$(find localize_robot)/launch/localize_gmapping.launch">
 		</include> -->
 
+  <node pkg="gmapping" type="slam_gmapping" name="slam" output="screen" >
+    <remap from="scan" to="scan_raw" />
+    <?ignore
+      <param name="odom_frame" value="/mobile_base_controller/odom" />
+    ?>
+    <param name="base_frame" value="base_footprint" />
+    <param name="xmin" value="0" />
+    <param name="ymin" value="0" />
+    <param name="xmax" value="400.0" />
+    <param name="ymax" value="400.0" />
+  </node>
+
   <node name="rviz" pkg="rviz" type="rviz"
     args="-d $(find tiago_2dnav)/config/rviz/navigation_public_sim.rviz"/> 
-
+<!-- 
   <node name="map_server" pkg="map_server" type="map_server" 
-    args="$(env HOME)/.pal/tiago_maps/configurations/test_so/map.yaml"/>
+    args="$(env HOME)/.pal/tiago_maps/configurations/test_so/map.yaml"/> -->
 
   <node name="amcl" pkg="amcl" type="amcl">
     <param name="use_map_topic" value="true" />
