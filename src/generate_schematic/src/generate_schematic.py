@@ -171,7 +171,7 @@ class GenerateSchematic:
         """
         #perform clustering to divide image into groups of the same color
         NUM_CLUSTERS = 11
-        segmented, clustered_segments, labels_bincount = self.segment(img, segmentation_method=Segmentation.cluster_segment, n_clusters=NUM_CLUSTERS)
+        clustered_segments, labels_bincount = self.segment(img, segmentation_method=Segmentation.cluster_segment, n_clusters=NUM_CLUSTERS)
         for i, segment in enumerate(clustered_segments):
             #save each cluster to a separate image
             self.save_image(segment, IMAGE_OUT_NAME + "_" + str(i) + ".jpg")
@@ -288,7 +288,7 @@ class GenerateSchematic:
         # edges = Segmentation.edge_detect_canny(img)
         #convert to grayscale and threshold so blocks appear white
         unified = self.unify_colors(img)
-        segmented, clustered_segments, labels_bincount = self.segment(unified, segmentation_method=Segmentation.cluster_segment, n_clusters=11)
+        clustered_segments, labels_bincount = self.segment(unified, segmentation_method=Segmentation.cluster_segment, n_clusters=11)
         total_labels = sum(labels_bincount)
         corners = []
         for i, segment in enumerate(clustered_segments):
@@ -342,40 +342,38 @@ class Segmentation:
 
     @staticmethod
     def cluster_segment(img, n_clusters=3, random_state=0):
-        """segment image using k_means clustering
+        """
+        Segment image using k_means clustering.
 
         Parameter
         ---------
-        img : ndarray
-            rgb image array
-        n_clusters : int
-            the number of clusters to form as well as the number of centroids to generate
-        random_state : int
-            determines random number generation for centroid initialization
+        img: ndarray
+            RGB image array.
+        n_clusters: int
+            The number of clusters to form as well as the number of centroids to generate.
+        random_state: int
+            Determines random number generation for centroid initialization.
 
         Returns
         -------
-        ndarray
-            clusters of gray_img represented with similar pixel values
-        """
-        originalImage = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        reshapedImage = np.float32(originalImage.reshape(-1, 3))
-        stopCriteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.1)
-        ret, labels, clusters = cv2.kmeans(reshapedImage, n_clusters, None, stopCriteria, 10, cv2.KMEANS_RANDOM_CENTERS)
-        clusters = np.uint8(clusters)
-        intermediateImage = clusters[labels.flatten()]
-        clusteredImage = intermediateImage.reshape((originalImage.shape))
+        clustered_segments: np.ndarray
+            An array of images with only a specific cluster displayed.
+        label_count: np.ndarray
+            An array with counts of labels at each label index. 
 
-        clusteredSegments = []
+        """
+        original_shape = img.shape
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        reshapedImage = np.float32(img.reshape(-1, 3))
+        stopCriteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 100, 0.1)
+        _, labels, _ = cv2.kmeans(reshapedImage, n_clusters, None, stopCriteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+
+        clustered_segments = []
         for i in range(n_clusters):
             new_image = reshapedImage * (labels == i)
-            new_image = new_image.reshape((originalImage.shape))
-            clusteredSegments.append(new_image)
-        return clusteredImage, clusteredSegments, np.bincount(labels.flatten())
-
-    #----------------------------------------------------------------------------------------------
-    # Helpers
-
+            new_image = new_image.reshape(original_shape)
+            clustered_segments.append(new_image)
+        return clustered_segments, np.bincount(labels.flatten())
 
 
 if __name__ == "__main__":
