@@ -11,6 +11,9 @@ import numpy as np
 from utils import rpy_to_quaternion
 
 
+IMG_DIR = "images"
+
+
 x, y = 2, 0
 CAMERA_DATA = [
     ["camera0", (x, y, 1), (0, np.pi / 2, 0)],

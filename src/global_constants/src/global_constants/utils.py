@@ -1,4 +1,9 @@
+import os
+
 import numpy as np
+import cv2
+
+import constants as const
 
 
 def rpy_to_quaternion(roll, pitch, yaw):
@@ -28,3 +33,32 @@ def rpy_to_quaternion(roll, pitch, yaw):
     w = cr * cp * cy + sr * sp * sy
 
     return x, y, z, w
+
+
+def get_image(path):
+    """
+    Parameters
+    ----------
+    path : str
+        The path to the image to load.
+
+    Returns
+    -------
+    img : np.ndarray
+        The image located at the input path.
+
+    """
+    return cv2.imread(path)
+
+
+def save_image(img, name):
+    """
+    Parameters
+    ----------
+    img : np.ndarray
+        Image to save.
+    name : str
+        Name of the image to save.
+
+    """
+    cv2.imwrite(os.path.join(const.IMG_DIR, name), img)

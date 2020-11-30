@@ -10,13 +10,11 @@ import os
 
 import cv2
 
-import constants as const
-
 import image_matching as matching
 
 import matplotlib.pyplot as plt
 
-from global_constants import constants as gconst
+from global_constants import constants as gconst, utils as gutils
 
 import tf.transformations as tr
 
@@ -75,38 +73,10 @@ class CameraDTO:
         self.intrinsic_matrix = np.reshape(camera_info.K, (3, 3))
 
     def get_raw_image(self):
-        # See GenerateSchematic.get_image
-        self.image = cv2.imread("images/camera{}_image_raw.jpg".format(self.index))
+        self.image = gutils.get_image("images/camera{}_image_raw.jpg".format(self.index))
 
 
 class GenerateSchematic:
-
-    def get_image(self, path):
-        """
-        Parameters
-        ----------
-        path : str
-            The path to the image to load.
-
-        Returns
-        -------
-        img : np.ndarray
-            The image located at the input path.
-
-        """
-        return cv2.imread(path)
-
-    def save_image(self, img, name):
-        """
-        Parameters
-        ----------
-        img : np.ndarray
-            Image to save.
-        name : str
-            Name of the image to save.
-
-        """
-        cv2.imwrite(os.path.join(const.IMG_DIR, name), img)
 
     def segment(self, img, segmentation_method=None, **kwargs):
         """
@@ -180,7 +150,7 @@ class GenerateSchematic:
         if save:
             for i, segment in enumerate(clustered_segments):
                 # Save each cluster to a separate image
-                self.save_image(segment, IMAGE_OUT_NAME + "_" + str(i) + ".jpg")
+                gutils.save_image(segment, IMAGE_OUT_NAME + "_" + str(i) + ".jpg")
 
         # labels_bincount represents the number of pixels in each cluster
         total_labels = sum(labels_bincount)
@@ -304,7 +274,7 @@ class GenerateSchematic:
             print(percent_data)
             #if this is a cluster we want to look at
             #(has percent_data within a certain range, indicating that the cluster has boxes)
-            self.save_image(segment, "segmented_" + str(i) + ".jpg")
+            gutils.save_image(segment, "segmented_" + str(i) + ".jpg")
             if percent_data > .001 and percent_data < .5:
                 gray = cv2.cvtColor(segment, cv2.COLOR_BGR2GRAY)
                 features = cv2.goodFeaturesToTrack(gray, 4, .01, 10)
