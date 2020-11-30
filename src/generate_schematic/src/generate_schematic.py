@@ -15,7 +15,6 @@ import image_matching as matching
 import matplotlib.pyplot as plt
 
 from global_constants import constants as gconst, utils as gutils
-from segmentation import Segmentation
 
 import tf.transformations as tr
 
@@ -78,110 +77,6 @@ class CameraDTO:
 
 
 class GenerateSchematic:
-
-    def segment(self, img, segmentation_method=None, **kwargs):
-        """
-        Parameters
-        ----------
-        img : np.ndarray
-            The image to perform segmentation on.
-
-        Returns
-        -------
-        edge_detected : np.ndarray
-            The input image with segmentation performed.
-
-        """
-        if segmentation_method is None:
-            segmentation_method = Segmentation.edge_detect_canny
-
-        return segmentation_method(img, **kwargs)
-
-    def find_image_bottom_left_coordinates_2d(self, img):
-        """
-        Parameters
-        ----------
-        img : np.ndarray
-            Image with blocks to find bottom left block coordinates from.
-            The blocks in the image should all be the same color.
-
-        Returns
-        -------
-        results : np.ndarray
-            An array of bottom left block coordinates in the image
-
-        """
-        #convert to grayscale and threshold so blocks appear white
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        _, binary = cv2.threshold(gray, 15, 255, cv2.THRESH_BINARY)
-
-        #find contours of blocks
-        _, contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-        #loop through contours and find bottom left coordinates
-        results = []
-        for contour in contours:
-            #note, min_x and max_x are in image coordinates (so x increases to the right and y increases downwards)
-            min_x = np.min(contour[:, 0, 0])
-            max_y = np.max(contour[:, 0, 1])
-            results.append((min_x, max_y))
-        return results
-
-    def find_all_bottom_left_coordinates_2d(self, img, num_clusters=11, save=False, low=0.001, high=0.5):
-        """
-        Given an image that is only 2d, find and return all of the bottom left corners of blocks in the image.
-
-        Parameters
-        ----------
-        img: np.ndarray
-            Image with blocks to find bottom left block coordinates from.
-            The blocks may be different colors.
-        num_clusters: int
-            The number of clusters to cluster around.
-
-        Returns
-        -------
-        bottom_left_coordinates: np.ndarray
-            An array of bottom left block coordinates in the image
-
-        """
-        # Perform clustering to divide image into groups of the same color
-        clustered_segments, labels_bincount = self.segment(img, segmentation_method=Segmentation.cluster_segment, n_clusters=num_clusters)
-
-        if save:
-            for i, segment in enumerate(clustered_segments):
-                # Save each cluster to a separate image
-                gutils.save_image(segment, IMAGE_OUT_NAME + "_" + str(i) + ".jpg")
-
-        # labels_bincount represents the number of pixels in each cluster
-        total_labels = sum(labels_bincount)
-        bottom_left_coordinates = []
-        for i in range(num_clusters):
-            percent_data = labels_bincount[i]/float(total_labels)
-            # If this is a cluster we want to look at i.e. it has percent_data within a certain range,
-            # indicating that the cluster has boxes but is not a background
-            if low < percent_data < high:
-                # Find its bottom left block coordinates
-                image_bottom_left_coordinates = self.find_image_bottom_left_coordinates_2d(clustered_segments[i])
-                bottom_left_coordinates.extend(image_bottom_left_coordinates)
-
-        return bottom_left_coordinates
-
-    def unify_colors(self, img):
-        """
-        Produce a new image where shadows appear same color as block_size
-
-        Parameters
-        ----------
-        img : ndarray
-
-        Returns
-        ---------
-        uniform_img : ndarray
-        """
-        sums = np.reshape(np.sum(img, axis = 2), (img.shape[0], img.shape[1], 1)).astype(np.float32)
-        sums[sums == 0] = 0.01
-        return (img/sums * 255).astype(np.uint8)
 
     def get_matched_3d_coordinates(self, left_matches, right_matches, R, T, left_intrinsic, right_intrinsic):
         coordinates = []
@@ -260,34 +155,6 @@ class GenerateSchematic:
         # img3 = cv2.drawMatches(cameras[0].image,first_keypoints,cameras[1].image,second_keypoints,filtered_matches,None, flags=2)
         # plt.imshow(img3)
         # plt.show()
-
-
-    def find_corners_3d(self, img):
-        # edges = Segmentation.edge_detect_canny(img)
-        #convert to grayscale and threshold so blocks appear white
-        unified = self.unify_colors(img)
-        clustered_segments, labels_bincount = self.segment(unified, segmentation_method=Segmentation.cluster_segment, n_clusters=11)
-        total_labels = sum(labels_bincount)
-        corners = []
-        for i, segment in enumerate(clustered_segments):
-            percent_data = labels_bincount[i]/float(total_labels)
-            print(i)
-            print(percent_data)
-            #if this is a cluster we want to look at
-            #(has percent_data within a certain range, indicating that the cluster has boxes)
-            gutils.save_image(segment, "segmented_" + str(i) + ".jpg")
-            if percent_data > .001 and percent_data < .5:
-                gray = cv2.cvtColor(segment, cv2.COLOR_BGR2GRAY)
-                features = cv2.goodFeaturesToTrack(gray, 4, .01, 10)
-                for feature in features:
-                    corners.append((feature[0][0], feature[0][1]))
-
-        # for corner in corners:
-        #      cv2.circle(img, corner, 3, (255, 255, 255), -1)
-        # cv2.imshow("CornerCoordinates", img)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-        return corners
 
 
 if __name__ == "__main__":
