@@ -2,8 +2,67 @@ from sensor_msgs.msg import Image
 import cv2
 import numpy as np
 
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+
+from camera import CameraDTO
+
+
+bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+
 
 class ImageMatching:
+
+    def match_2_cameras_images(self, camera1, camera2, kp1, des1, kp2, des2, epipolar_threshold=0.11):
+        """
+        Parameters
+        ----------
+        camera1: CameraDTO
+        camera2: CameraDTO
+
+        Returns
+        -------
+        coordinates: list
+            A list of coordinates filtered by epipolar constraints.
+
+        """
+        # Calculate R/T transform between cameras
+        g21, g01, g02 = CameraDTO.get_transformation(camera1, camera2)
+        R = g21[0:3, 0:3]
+        T = g21[0:3, -1]
+
+        # Find matching corners in both images
+        matches = bf.match(des1, des2)
+
+        inlier_mask = np.array(ImageMatching.FilterByEpipolarConstraint(camera1.intrinsic_matrix, camera2.intrinsic_matrix, kp1, kp2, R, T, epipolar_threshold, matches)) == 1
+        filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
+        left_matches = [kp1[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))]
+        right_matches = [kp2[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))]
+
+        coordinates = self.get_matched_3d_coordinates(left_matches, right_matches, R, T, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
+
+        coordinates = np.reshape(coordinates, (len(coordinates), 3))
+        return coordinates
+
+    @staticmethod
+    def draw_matches(image1, keypoints1, image2, keypoints2, matches):
+        img3 = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches, None, flags=2)
+        plt.imshow(img3)
+        plt.show()
+
+    @staticmethod
+    def scatter3d(points):
+        fig = plt.figure()
+        ax = Axes3D(fig)
+
+        x_coords = points[:, 0]
+        y_coords = points[:, 1]
+        z_coords = points[:, 2]
+
+        ax.scatter(x_coords, y_coords, z_coords)
+        plt.show()
+
+    # Helpers--------------------------------------------------------------------------------------
 
     @staticmethod
     def FilterByEpipolarConstraint(intrinsics1, intrinsics2, points1, points2, R, T, threshold, matches):
@@ -49,120 +108,7 @@ class ImageMatching:
             m = (error < threshold).astype(int)
             inlier_mask.append(m)
         return np.array(inlier_mask)
-
-    @staticmethod
-    def least_squares_triangulate(x_1, x_2, R, T, left_intrinsic, right_intrinsic):
-        """
-        Computes the coordinates of the point represented by the corresponding pair (x1, x2).
-        x1, x2 are given in unnormalized homogeneous coordinates.
-        You should compute the coordinates X of the point written in the reference frame of the
-        right camera.
-
-        (R, T) is the transform g_21.
-
-        left_intrinsic and right_intrinsic are both numpy arrays of size (3, 3) representing the
-        3x3 intrinsic matrices of the left and right cameras respectively.
-        """
-        left_intrinsic_inv = np.linalg.inv(left_intrinsic)
-        right_intrinsic_inv = np.linalg.inv(right_intrinsic)
-        x_1 = np.reshape(x_1, (3, 1))
-        x_2 = np.reshape(x_2, (3, 1))
-        x_1 = np.matmul(left_intrinsic_inv, x_1)
-        x_2 = np.matmul(right_intrinsic_inv, x_2)
-
-        A = np.concatenate((-np.matmul(R, x_1), x_2), axis = 1)
-        # Use least squares to solve for lambda1 and lambda2.
-        lambda_1, lambda_2 = np.linalg.lstsq(A, T)[0]
-        x_1 = np.reshape(x_1, (3,))
-        x_2 = np.reshape(x_2, (3,))
-
-        if lambda_1 > 0 and lambda_2 > 0:
-            X1 = lambda_2 * x_2
-            X2 = (lambda_1  * np.matmul(R, x_1)) + T
-            X = .5 * (X1 + X2)
-            return X
-        else:
-            return None
-
-    def get_matched_3d_coordinates(self, left_matches, right_matches, R, T, left_intrinsic, right_intrinsic):
-        coordinates = []
-        for i in range(len(left_matches)):
-            result = matching.least_squares_triangulate(left_matches[i] + (1,), right_matches[i] + (1,), R, T, left_intrinsic, right_intrinsic)
-            if result is not None:
-                coordinates.append(result)
-        return coordinates
-
-    def match_images(self, image_indices):
-        """
-        Parameters
-        ----------
-        image_indices: list
-            A list of the indices corresponding to the images we want to match.
-
-        TODO:
-        1. DONE Get intrinsic camera matrices from urdf file
-        2. DONE Get R and T transform between cameras
-        3. Fill in find_corners_3d to find corners in each image
-        4. Given corners in each image, find corners that match in both images
-        5. Use least squares triangulate to find 3d coordinates of these corners
-        6. Fill in missing corners layer by layer (also, if corner shows up in layer n but not layer n - 1, add to layer n - 1.)
-        7. Reconstruct positions of blocks from 3d coordinates of corners
-
-        """
-        cameras = [CameraDTO(index) for index in image_indices]
-
-        #calculate R/T transform between cameras
-        firstPose = cameras[0].pose
-        secondPose = cameras[1].pose
-        g1 = tr.quaternion_matrix([firstPose.orientation.x, firstPose.orientation.y, firstPose.orientation.z, firstPose.orientation.w])
-        g1[0:3, -1] = [firstPose.position.x, firstPose.position.y, firstPose.position.z]
-        g2 = tr.quaternion_matrix([secondPose.orientation.x, secondPose.orientation.y, secondPose.orientation.z, secondPose.orientation.w])
-        g2[0:3, -1] = [secondPose.position.x, secondPose.position.y, secondPose.position.z]
-        g = np.matmul(g1, np.linalg.inv(g2))
-        R = g[0:3, 0:3]
-        T = g[0:3, -1]
-        print("R", R)
-        print("T", T)
-
-        #find matching corners in both images
-        orb = cv2.ORB_create()
-        first_keypoints, first_descriptors = orb.detectAndCompute(cameras[0].image, None)
-        second_keypoints, second_descriptors = orb.detectAndCompute(cameras[1].image, None)
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        matches = bf.match(first_descriptors, second_descriptors)
-
-        inlier_mask = np.array(matching.FilterByEpipolarConstraint(cameras[0].intrinsic_matrix, cameras[1].intrinsic_matrix, first_keypoints, second_keypoints, R, T, .11, matches)) == 1
-        filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
-        left_matches = [first_keypoints[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))]
-        right_matches = [second_keypoints[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))]
-
-        coordinates = self.get_matched_3d_coordinates(left_matches, right_matches, R, T, cameras[0].intrinsic_matrix, cameras[1].intrinsic_matrix)
-
-        coordinates = np.reshape(coordinates, (len(coordinates), 3))
-        from mpl_toolkits.mplot3d import Axes3D
-        import random
-
-        fig = plt.figure()
-        ax = Axes3D(fig)
-
-        sequence_containing_x_vals = coordinates[:, 0]
-        sequence_containing_y_vals = coordinates[:, 1]
-        sequence_containing_z_vals = coordinates[:, 2]
-
-        random.shuffle(sequence_containing_x_vals)
-        random.shuffle(sequence_containing_y_vals)
-        random.shuffle(sequence_containing_z_vals)
-
-        ax.scatter(sequence_containing_x_vals, sequence_containing_y_vals, sequence_containing_z_vals)
-        plt.show()
-
-
-        return coordinates
-        # img3 = cv2.drawMatches(cameras[0].image,first_keypoints,cameras[1].image,second_keypoints,filtered_matches,None, flags=2)
-        # plt.imshow(img3)
-        # plt.show()
-
-    # Helpers--------------------------------------------------------------------------------------
+    
     @staticmethod
     def epipolar_distance(x, l):
         return np.abs(x.dot(l)) / np.sqrt(l[0] ** 2 + l[1] ** 2)
@@ -199,3 +145,46 @@ class ImageMatching:
         error = d1 + d2
 
         return error
+
+    @staticmethod
+    def get_matched_3d_coordinates(left_matches, right_matches, R, T, left_intrinsic, right_intrinsic):
+        coordinates = []
+        for i in range(len(left_matches)):
+            result = ImageMatching.least_squares_triangulate(left_matches[i] + (1,), right_matches[i] + (1,), R, T, left_intrinsic, right_intrinsic)
+            if result is not None:
+                coordinates.append(result)
+        return coordinates
+
+    @staticmethod
+    def least_squares_triangulate(x_1, x_2, R, T, left_intrinsic, right_intrinsic):
+        """
+        Computes the coordinates of the point represented by the corresponding pair (x1, x2).
+        x1, x2 are given in unnormalized homogeneous coordinates.
+        You should compute the coordinates X of the point written in the reference frame of the
+        right camera.
+
+        (R, T) is the transform g_21.
+
+        left_intrinsic and right_intrinsic are both numpy arrays of size (3, 3) representing the
+        3x3 intrinsic matrices of the left and right cameras respectively.
+        """
+        left_intrinsic_inv = np.linalg.inv(left_intrinsic)
+        right_intrinsic_inv = np.linalg.inv(right_intrinsic)
+        x_1 = np.reshape(x_1, (3, 1))
+        x_2 = np.reshape(x_2, (3, 1))
+        x_1 = np.matmul(left_intrinsic_inv, x_1)
+        x_2 = np.matmul(right_intrinsic_inv, x_2)
+
+        A = np.concatenate((-np.matmul(R, x_1), x_2), axis = 1)
+        # Use least squares to solve for lambda1 and lambda2.
+        lambda_1, lambda_2 = np.linalg.lstsq(A, T)[0]
+        x_1 = np.reshape(x_1, (3,))
+        x_2 = np.reshape(x_2, (3,))
+
+        if lambda_1 > 0 and lambda_2 > 0:
+            X1 = lambda_2 * x_2
+            X2 = (lambda_1  * np.matmul(R, x_1)) + T
+            X = .5 * (X1 + X2)
+            return X
+        else:
+            return None

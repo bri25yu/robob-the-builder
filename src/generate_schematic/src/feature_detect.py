@@ -3,9 +3,13 @@ import numpy as np
 
 from global_constants import utils as gutils
 from segmentation import Segmentation
+from image_matching import ImageMatching
 
 
-class BottomLeft:
+orb = cv2.ORB_create()
+
+
+class FeatureDetect:
 
     @staticmethod
     def find_all_bottom_left_coordinates_2d(img, num_clusters=11, low=0.001, high=0.5):
@@ -43,32 +47,25 @@ class BottomLeft:
 
         return bottom_left_coordinates
 
-    def find_corners_3d(self, img):
-        # edges = Segmentation.edge_detect_canny(img)
-        #convert to grayscale and threshold so blocks appear white
-        unified = self.unify_colors(img)
-        clustered_segments, labels_bincount = self.segment(unified, segmentation_method=Segmentation.cluster_segment, n_clusters=11)
-        total_labels = sum(labels_bincount)
-        corners = []
-        for i, segment in enumerate(clustered_segments):
-            percent_data = labels_bincount[i]/float(total_labels)
-            print(i)
-            print(percent_data)
-            #if this is a cluster we want to look at
-            #(has percent_data within a certain range, indicating that the cluster has boxes)
-            gutils.save_image(segment, "segmented_" + str(i) + ".jpg")
-            if percent_data > .001 and percent_data < .5:
-                gray = cv2.cvtColor(segment, cv2.COLOR_BGR2GRAY)
-                features = cv2.goodFeaturesToTrack(gray, 4, .01, 10)
-                for feature in features:
-                    corners.append((feature[0][0], feature[0][1]))
+    @staticmethod
+    def find_all_corners_3d(camera1, camera2, epipolar_threshold=0.11):
+        """
+        Parameters
+        ----------
+        camera1: CameraDTO
+        camera2: CameraDTO
+        epipolar_threshold: float
 
-        # for corner in corners:
-        #      cv2.circle(img, corner, 3, (255, 255, 255), -1)
-        # cv2.imshow("CornerCoordinates", img)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-        return corners
+        Returns
+        -------
+        corners: list
+            A list of all of the corner positions that can be recovered from the two input images.
+
+        """
+        kp1, des1 = orb.detectAndCompute(camera1.image, None)
+        kp2, des2 = orb.detectAndCompute(camera2.image, None)
+
+        return ImageMatching.match_2_cameras_images(camera1, camera2, kp1, des1, kp2, des2, epipolar_threshold=epipolar_threshold)
 
     # Helpers--------------------------------------------------------------------------------------
 
