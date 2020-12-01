@@ -37,13 +37,13 @@ class ImageMatching:
         matches = bf.match(des1, des2)
         left_matches = [kp1[matches[i].queryIdx].pt for i in range(len(matches))]
         right_matches = [kp2[matches[i].trainIdx].pt for i in range(len(matches))]
-        projMat1 = camera1.intrinsic_matrix.dot(g01[:3])
-        projMat2 = camera2.intrinsic_matrix.dot(g02[:3])
-        left_matches = np.array(left_matches, dtype = np.float32).T
-        right_matches = np.array(right_matches, dtype = np.float32).T
-        coordinates = cv2.triangulatePoints(projMat1, projMat2, left_matches, right_matches)
-        # coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R21, T21, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
-        # coordinates = np.reshape(coordinates, (len(coordinates), 3))
+        projMat1 = camera1.intrinsic_matrix.dot(np.linalg.inv(g01)[:3])
+        projMat2 = camera2.intrinsic_matrix.dot(np.linalg.inv(g02)[:3])
+        # left_matches = np.array(left_matches, dtype = np.float32).T
+        # right_matches = np.array(right_matches, dtype = np.float32).T
+        # coordinates = cv2.triangulatePoints(projMat1, projMat2, left_matches, right_matches)
+        coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R21, T21, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
+        coordinates = np.reshape(coordinates, (len(coordinates), 3))
 
         return coordinates
 
@@ -82,7 +82,7 @@ class ImageMatching:
         Parameters
         ----------
         coords: list
-            A list of (3, 1) coordinates.
+            A list of (3, 1) coordinates in the world frame.
         camera: CameraDTO
 
         Returns
@@ -96,7 +96,7 @@ class ImageMatching:
         cam_coords = []
         for coord in coords:
             # coord = [2.06, -.06, 0]
-            new_coord = g.dot(coord)[:3]
+            new_coord = np.linalg.inv(g).dot(np.hstack((coord, [1])))[:3]
             # new_coord = coord
             # print("predicted 3d point in original camera frame", new_coord)
             # transformation = np.array([[0, -1, 0, 0],

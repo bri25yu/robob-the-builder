@@ -18,16 +18,17 @@ def main():
     rospy.init_node("schematic_node", anonymous = True)
 
     camera2, camera3 = CameraDTO(2), CameraDTO(3)
-    coordinates = FeatureDetect.find_all_corners_3d(camera2, camera3)
-
-    g30 = CameraDTO.get_g(camera3.pose)
-    world_coordinates = np.hstack((coordinates, np.ones((len(coordinates), 1))))
-    world_coordinates = np.linalg.inv(g30).dot(world_coordinates).T
-    world_coordinates = world_coordinates[:, :3]
+    camera3_coordinates = FeatureDetect.find_all_corners_3d(camera2, camera3).T
+    # print(world_coordinates.shape)
+    g03 = CameraDTO.get_g(camera3.pose)
+    camera3_coordinates = camera3_coordinates.T
+    camera3_coordinates = np.hstack((camera3_coordinates, np.ones((camera3_coordinates.shape[0], 1))))
+    world_coordinates = g03.dot(camera3_coordinates.T).T
+    # world_coordinates = world_coordinates[:, :3]
 
     ImageMatching.scatter3d(world_coordinates)
 
-    img_coords = ImageMatching.project_3d_to_cam(coordinates.T, camera3)
+    img_coords = ImageMatching.project_3d_to_cam(world_coordinates[:, :3], camera3)
     ImageMatching.draw_points(camera3.image, img_coords, save_name="projected_points_on_image.jpg")
 
     with open(OUTPUT_FILE, "w") as file:

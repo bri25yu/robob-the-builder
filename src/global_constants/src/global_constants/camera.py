@@ -101,6 +101,7 @@ class CameraDTO:
             A (4, 4)-shaped array representing the transformation from this pose to world frame coordinates.
 
         """
+        #note: i think this is wrong
         orient, pos = pose.orientation, pose.position
 
         g = tr.quaternion_matrix([orient.x, orient.y, orient.z, orient.w])
@@ -109,4 +110,4 @@ class CameraDTO:
                                         [0, 0, -1, 0.036],
                                         [1, 0, 0, 0],
                                         [0, 0, 0, 1]])
-        return transformation.dot(np.linalg.inv(g))
+        return g.dot(np.linalg.inv(transformation))
