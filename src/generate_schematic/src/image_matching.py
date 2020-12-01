@@ -35,18 +35,10 @@ class ImageMatching:
 
         # Find matching corners in both images
         matches = bf.match(des1, des2)
-        # left_matches = [kp1[matches[i].queryIdx].pt for i in range(len(matches))]
-        # right_matches = [kp2[matches[i].trainIdx].pt for i in range(len(matches))]
         inlier_mask = ImageMatching.FilterByEpipolarConstraint(camera1.intrinsic_matrix, camera2.intrinsic_matrix, kp1, kp2, R21, T21, .02, matches)
         filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
         left_matches = [kp1[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))]
         right_matches = [kp2[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))]
-
-        # projMat1 = camera1.intrinsic_matrix.dot(np.linalg.inv(g01)[:3])
-        # projMat2 = camera2.intrinsic_matrix.dot(np.linalg.inv(g02)[:3])
-        # left_matches = np.array(left_matches, dtype = np.float32).T
-        # right_matches = np.array(right_matches, dtype = np.float32).T
-        # coordinates = cv2.triangulatePoints(projMat1, projMat2, left_matches, right_matches)
         coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R21, T21, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
         coordinates = np.reshape(coordinates, (len(coordinates), 3))
 
@@ -150,7 +142,7 @@ class ImageMatching:
             l2 = E.dot(x1)
 
             error = ImageMatching.epipolar_error(x1, x2, l1, l2)
-            print(error)
+            # print(error)
             m = (error < threshold).astype(int)
             inlier_mask.append(m)
         return np.array(inlier_mask)
@@ -226,7 +218,7 @@ class ImageMatching:
         A = np.concatenate((-np.matmul(R, x_1), x_2), axis = 1)
         # Use least squares to solve for lambda1 and lambda2.
         lambda_1, lambda_2 = np.linalg.lstsq(A, T)[0]
-        print(lambda_1, lambda_2)
+        # print(lambda_1, lambda_2)
         x_1 = np.reshape(x_1, (3,))
         x_2 = np.reshape(x_2, (3,))
 
