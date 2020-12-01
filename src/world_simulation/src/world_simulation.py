@@ -22,8 +22,8 @@ import utils
 
 def main():
     world_sim = WorldSimulation(gazebo_only=True)
-    # create_exploration_world(world_sim)
-    create_world_with_structure(world_sim)
+    create_exploration_world(world_sim)
+    # create_world_with_structure(world_sim)
 
 
 def create_exploration_world(world_sim):

@@ -73,6 +73,10 @@
     <rosparam file="$(find localize_robot)/parameters/base_local_planner_params.yaml" command="load"/>
   </node>
 
+  <!-- <node pkg="world_simulation" type="add_block.py" name="add_block" output="screen" /> -->
+
+  <!-- <node pkg="navigation_goal" type="tiago_middleman.py" name="tiago_middleman" output="screen" /> -->
+
     <!-- pointcloud to laserscan-->
     <!-- <include file="$(find tiago_laser_sensors)/launch/rgbd_cloud_laser.launch">
         <arg name="cloud" value="/xtion/depth_registered/points"/>
