@@ -5,6 +5,7 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
+from global_constants import utils as gutils
 from global_constants.camera import CameraDTO
 
 
@@ -49,12 +50,14 @@ class ImageMatching:
         plt.show()
 
     @staticmethod
-    def draw_points(image, points, color=(255, 0, 0)):
+    def draw_points(image, points, color=(255, 0, 0), save_name=None):
         image = image.copy()
         for px, py in points:
             v, u = int(px), int(py)
             image[u, v, :] = color
         plt.imshow(image)
+        if save_name is not None:
+            gutils.save_image(image, save_name)
         plt.show()
 
     @staticmethod

@@ -28,7 +28,7 @@ def main():
     ImageMatching.scatter3d(world_coordinates)
 
     img_coords = ImageMatching.project_3d_to_cam(coordinates, camera3)
-    ImageMatching.draw_points(camera2.image, img_coords)
+    ImageMatching.draw_points(camera3.image, img_coords, save_name="projected_points_on_image.jpg")
 
     with open(OUTPUT_FILE, "w") as file:
         for coord in world_coordinates:
