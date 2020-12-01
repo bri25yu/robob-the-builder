@@ -37,7 +37,7 @@ class ImageMatching:
         matches = bf.match(des1, des2)
         left_matches = [kp1[matches[i].queryIdx].pt for i in range(len(matches))]
         right_matches = [kp2[matches[i].trainIdx].pt for i in range(len(matches))]
-
+        print("image coordinate ", right_matches[0])
         coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R21, T21, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
         coordinates = np.reshape(coordinates, (len(coordinates), 3))
 
@@ -88,9 +88,18 @@ class ImageMatching:
 
         """
         intrinsic = camera.intrinsic_matrix
+        g = CameraDTO.get_g(camera.pose)
         cam_coords = []
         for coord in coords:
-            cam_coords.append(intrinsic.dot(coord)[:2] / coord[2])
+            new_coord =  np.matmul(np.linalg.inv(g), np.hstack((coord, [1])))[:3]
+            print("predicted 3d point in original camera frame", new_coord)
+            new_coord = [-new_coord[1], -new_coord[2] + .036, new_coord[0]]
+            print("intrinsic matrix", intrinsic)
+            cam_coord = intrinsic.dot(new_coord)[:3]
+            result = cam_coord[:2] / new_coord[2]
+            cam_coords.append(result)
+            print("predicted 3d point in camera frame", new_coord)
+            print("predicted 2d image projection", result)
         return cam_coords
 
     # Helpers--------------------------------------------------------------------------------------
@@ -139,7 +148,7 @@ class ImageMatching:
             m = (error < threshold).astype(int)
             inlier_mask.append(m)
         return np.array(inlier_mask)
-    
+
     @staticmethod
     def epipolar_distance(x, l):
         return np.abs(x.dot(l)) / np.sqrt(l[0] ** 2 + l[1] ** 2)
