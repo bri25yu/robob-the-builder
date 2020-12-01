@@ -6,8 +6,18 @@ import numpy as np
 import tf.transformations as tr
 
 from sensor_msgs.msg import CameraInfo
+from geometry_msgs.msg import (
+    Pose,
+    Point,
+    Quaternion,
+)
 
 from global_constants import constants as gconst, utils as gutils
+
+
+CAMERAS = dict()
+for i, d in enumerate(gconst.CAMERA_DATA):
+    CAMERAS["camera{}".format(i)] = Pose(position=Point(*d[0]), orientation=Quaternion(*gutils.rpy_to_quaternion(*d[1])))
 
 
 class CameraDTO:
@@ -38,7 +48,7 @@ class CameraDTO:
 
     def initialize(self):
         if self.pose is None:
-            self.pose = gconst.CAMERAS[CAMERA_NAME_TEMPLATE.format(self.index)]
+            self.pose = CAMERAS[CameraDTO.CAMERA_NAME_TEMPLATE.format(self.index)]
         if self.intrinsic_matrix is None:
             self.get_intrinsic_matrix()
         if self.image is None:

@@ -1,14 +1,6 @@
 #!/usr/bin/env python
 
-from geometry_msgs.msg import (
-    Pose,
-    Point,
-    Quaternion,
-)
-
 import numpy as np
-
-from utils import rpy_to_quaternion
 
 
 IMG_DIR = "images"
@@ -21,7 +13,6 @@ CAMERA_DATA = [
     [(2.3, -.75, 1), (.2, .7, 1.55)],
     [(2.4, -.75, 1.1), (.2, .7, 1.55)],
 ]
-CAMERAS = {"camera{}".format(i): Pose(position=Point(*d[0]), orientation=Quaternion(*rpy_to_quaternion(*d[1]))) for i, d in enumerate(CAMERA_DATA)}
 
 STRUCTURE_TO_BUILD = [  # Passed into WorldSimulation.add_square_2d
     [x, y, 3, 0],

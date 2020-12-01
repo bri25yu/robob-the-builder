@@ -10,8 +10,7 @@ from cv_bridge import CvBridge
 import cv2 as cv
 import os
 
-from global_constants import constants as gconst, utils as gutils
-from global_constants.camera import CameraDTO as camera
+from global_constants import constants as gconst, utils as gutils, camera
 
 
 bridge = CvBridge()
@@ -21,8 +20,8 @@ def main():
     if not os.path.exists(gconst.IMG_DIR):
         os.makedirs(gconst.IMG_DIR)
 
-    for i in range(len(gconst.CAMERAS)):
-        saveImage(camera.IMAGE_TOPIC_TEMPLATE.format(i), camera.IMAGE_SAVE_TEMPLATE.format(i))
+    for i in range(len(camera.CAMERAS)):
+        saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(i), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(i))
 
 
 def saveImage(topic, filename):
