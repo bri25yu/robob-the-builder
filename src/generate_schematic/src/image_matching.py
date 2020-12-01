@@ -35,10 +35,15 @@ class ImageMatching:
 
         # Find matching corners in both images
         matches = bf.match(des1, des2)
-        left_matches = [kp1[matches[i].queryIdx].pt for i in range(len(matches))]
-        right_matches = [kp2[matches[i].trainIdx].pt for i in range(len(matches))]
-        projMat1 = camera1.intrinsic_matrix.dot(np.linalg.inv(g01)[:3])
-        projMat2 = camera2.intrinsic_matrix.dot(np.linalg.inv(g02)[:3])
+        # left_matches = [kp1[matches[i].queryIdx].pt for i in range(len(matches))]
+        # right_matches = [kp2[matches[i].trainIdx].pt for i in range(len(matches))]
+        inlier_mask = ImageMatching.FilterByEpipolarConstraint(camera1.intrinsic_matrix, camera2.intrinsic_matrix, kp1, kp2, R21, T21, .02, matches)
+        filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
+        left_matches = [kp1[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))]
+        right_matches = [kp2[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))]
+
+        # projMat1 = camera1.intrinsic_matrix.dot(np.linalg.inv(g01)[:3])
+        # projMat2 = camera2.intrinsic_matrix.dot(np.linalg.inv(g02)[:3])
         # left_matches = np.array(left_matches, dtype = np.float32).T
         # right_matches = np.array(right_matches, dtype = np.float32).T
         # coordinates = cv2.triangulatePoints(projMat1, projMat2, left_matches, right_matches)
@@ -97,22 +102,9 @@ class ImageMatching:
         for coord in coords:
             # coord = [2.06, -.06, 0]
             new_coord = np.linalg.inv(g).dot(np.hstack((coord, [1])))[:3]
-            # new_coord = coord
-            # print("predicted 3d point in original camera frame", new_coord)
-            # transformation = np.array([[0, -1, 0, 0],
-            #                             [0, 0, -1, 0.036],
-            #                             [1, 0, 0, 0],
-            #                             [0, 0, 0, 1]])
-            # new_trans = transformation.dot(np.linalg.inv(g))
-            # new_coord =  np.matmul(new_trans, np.hstack((coord, [1])))[:3]
-            # new_coord = [-new_coord[1], -new_coord[2] + .036, new_coord[0]]
-            # print("intrinsic matrix", intrinsic)
             cam_coord = intrinsic.dot(new_coord)
             result = cam_coord[:2] / new_coord[2]
-            print(result)
             cam_coords.append(result)
-            # print("predicted 3d point in camera frame", new_coord)
-            # print("predicted 2d image projection", result)
         return cam_coords
 
     # Helpers--------------------------------------------------------------------------------------
@@ -158,6 +150,7 @@ class ImageMatching:
             l2 = E.dot(x1)
 
             error = ImageMatching.epipolar_error(x1, x2, l1, l2)
+            print(error)
             m = (error < threshold).astype(int)
             inlier_mask.append(m)
         return np.array(inlier_mask)
