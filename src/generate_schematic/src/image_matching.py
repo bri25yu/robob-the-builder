@@ -13,7 +13,8 @@ bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 
 class ImageMatching:
 
-    def match_2_cameras_images(self, camera1, camera2, kp1, des1, kp2, des2, epipolar_threshold=0.11):
+    @staticmethod
+    def match_2_cameras_images(camera1, camera2, kp1, des1, kp2, des2, epipolar_threshold=0.11):
         """
         Parameters
         ----------
@@ -39,7 +40,7 @@ class ImageMatching:
         left_matches = [kp1[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))]
         right_matches = [kp2[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))]
 
-        coordinates = self.get_matched_3d_coordinates(left_matches, right_matches, R, T, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
+        coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R, T, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
 
         coordinates = np.reshape(coordinates, (len(coordinates), 3))
         return coordinates
