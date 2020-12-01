@@ -105,5 +105,8 @@ class CameraDTO:
 
         g = tr.quaternion_matrix([orient.x, orient.y, orient.z, orient.w])
         g[0:3, -1] = [pos.x, pos.y, pos.z]
-
-        return g
+        transformation = np.array([[0, -1, 0, 0],
+                                        [0, 0, -1, 0.036],
+                                        [1, 0, 0, 0],
+                                        [0, 0, 0, 1]])
+        return transformation.dot(np.linalg.inv(g))

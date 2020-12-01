@@ -37,9 +37,13 @@ class ImageMatching:
         matches = bf.match(des1, des2)
         left_matches = [kp1[matches[i].queryIdx].pt for i in range(len(matches))]
         right_matches = [kp2[matches[i].trainIdx].pt for i in range(len(matches))]
-        print("image coordinate ", right_matches[0])
-        coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R21, T21, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
-        coordinates = np.reshape(coordinates, (len(coordinates), 3))
+        projMat1 = camera1.intrinsic_matrix.dot(g01[:3])
+        projMat2 = camera2.intrinsic_matrix.dot(g02[:3])
+        left_matches = np.array(left_matches, dtype = np.float32).T
+        right_matches = np.array(right_matches, dtype = np.float32).T
+        coordinates = cv2.triangulatePoints(projMat1, projMat2, left_matches, right_matches)
+        # coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R21, T21, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
+        # coordinates = np.reshape(coordinates, (len(coordinates), 3))
 
         return coordinates
 
@@ -91,15 +95,24 @@ class ImageMatching:
         g = CameraDTO.get_g(camera.pose)
         cam_coords = []
         for coord in coords:
-            new_coord =  np.matmul(np.linalg.inv(g), np.hstack((coord, [1])))[:3]
-            print("predicted 3d point in original camera frame", new_coord)
-            new_coord = [-new_coord[1], -new_coord[2] + .036, new_coord[0]]
-            print("intrinsic matrix", intrinsic)
-            cam_coord = intrinsic.dot(new_coord)[:3]
+            # coord = [2.06, -.06, 0]
+            new_coord = g.dot(coord)[:3]
+            # new_coord = coord
+            # print("predicted 3d point in original camera frame", new_coord)
+            # transformation = np.array([[0, -1, 0, 0],
+            #                             [0, 0, -1, 0.036],
+            #                             [1, 0, 0, 0],
+            #                             [0, 0, 0, 1]])
+            # new_trans = transformation.dot(np.linalg.inv(g))
+            # new_coord =  np.matmul(new_trans, np.hstack((coord, [1])))[:3]
+            # new_coord = [-new_coord[1], -new_coord[2] + .036, new_coord[0]]
+            # print("intrinsic matrix", intrinsic)
+            cam_coord = intrinsic.dot(new_coord)
             result = cam_coord[:2] / new_coord[2]
+            print(result)
             cam_coords.append(result)
-            print("predicted 3d point in camera frame", new_coord)
-            print("predicted 2d image projection", result)
+            # print("predicted 3d point in camera frame", new_coord)
+            # print("predicted 2d image projection", result)
         return cam_coords
 
     # Helpers--------------------------------------------------------------------------------------
@@ -208,6 +221,8 @@ class ImageMatching:
         left_intrinsic and right_intrinsic are both numpy arrays of size (3, 3) representing the
         3x3 intrinsic matrices of the left and right cameras respectively.
         """
+        # print("R", R)
+        # print("T", T)
         left_intrinsic_inv = np.linalg.inv(left_intrinsic)
         right_intrinsic_inv = np.linalg.inv(right_intrinsic)
         x_1 = np.reshape(x_1, (3, 1))
@@ -218,6 +233,7 @@ class ImageMatching:
         A = np.concatenate((-np.matmul(R, x_1), x_2), axis = 1)
         # Use least squares to solve for lambda1 and lambda2.
         lambda_1, lambda_2 = np.linalg.lstsq(A, T)[0]
+        print(lambda_1, lambda_2)
         x_1 = np.reshape(x_1, (3,))
         x_2 = np.reshape(x_2, (3,))
 

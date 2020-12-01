@@ -64,7 +64,6 @@ class FeatureDetect:
         """
         kp1, des1 = orb.detectAndCompute(camera1.image, None)
         kp2, des2 = orb.detectAndCompute(camera2.image, None)
-
         return ImageMatching.match_2_cameras_images(camera1, camera2, kp1, des1, kp2, des2, epipolar_threshold=epipolar_threshold)
 
     # Helpers--------------------------------------------------------------------------------------
