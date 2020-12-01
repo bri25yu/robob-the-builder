@@ -53,8 +53,8 @@ class ImageMatching:
     def draw_points(image, points, color=(255, 0, 0), save_name=None):
         image = image.copy()
         for px, py in points:
-            v, u = int(px), int(py)
-            image[u, v, :] = color
+            u, v = int(px), int(py)
+            image = cv2.circle(image, (u, v), radius=1, color=color, thickness=-1)
         plt.imshow(image)
         if save_name is not None:
             gutils.save_image(image, save_name)
