@@ -29,26 +29,32 @@ class ImageMatching:
         """
         # Calculate R/T transform between cameras
         g21, g01, g02 = CameraDTO.get_transformation(camera1, camera2)
-        R = g21[0:3, 0:3]
-        T = g21[0:3, -1]
+        R21 = g21[0:3, 0:3]
+        T21 = g21[0:3, -1]
 
         # Find matching corners in both images
         matches = bf.match(des1, des2)
+        left_matches = [kp1[matches[i].queryIdx].pt for i in range(len(matches))]
+        right_matches = [kp2[matches[i].trainIdx].pt for i in range(len(matches))]
 
-        inlier_mask = np.array(ImageMatching.FilterByEpipolarConstraint(camera1.intrinsic_matrix, camera2.intrinsic_matrix, kp1, kp2, R, T, epipolar_threshold, matches)) == 1
-        filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
-        left_matches = [kp1[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))]
-        right_matches = [kp2[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))]
-
-        coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R, T, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
-
+        coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R21, T21, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
         coordinates = np.reshape(coordinates, (len(coordinates), 3))
+
         return coordinates
 
     @staticmethod
     def draw_matches(image1, keypoints1, image2, keypoints2, matches):
         img3 = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches, None, flags=2)
         plt.imshow(img3)
+        plt.show()
+
+    @staticmethod
+    def draw_points(image, points, color=(255, 0, 0)):
+        image = image.copy()
+        for px, py in points:
+            v, u = int(px), int(py)
+            image[u, v, :] = color
+        plt.imshow(image)
         plt.show()
 
     @staticmethod
@@ -62,6 +68,27 @@ class ImageMatching:
 
         ax.scatter(x_coords, y_coords, z_coords)
         plt.show()
+
+    @staticmethod
+    def project_3d_to_cam(coords, camera):
+        """
+        Parameters
+        ----------
+        coords: list
+            A list of (3, 1) coordinates.
+        camera: CameraDTO
+
+        Returns
+        -------
+        cam_coords: list
+            The input coords in the camera world.
+
+        """
+        intrinsic = camera.intrinsic_matrix
+        cam_coords = []
+        for coord in coords:
+            cam_coords.append(intrinsic.dot(coord)[:2] / coord[2])
+        return cam_coords
 
     # Helpers--------------------------------------------------------------------------------------
 

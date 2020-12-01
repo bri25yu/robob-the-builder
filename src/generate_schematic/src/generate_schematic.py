@@ -2,9 +2,11 @@
 
 import rospy
 import cv2
+import numpy as np
 
 from feature_detect import FeatureDetect
 from global_constants.camera import CameraDTO
+from image_matching import ImageMatching
 
 
 IMAGE_IN_PATH = "images/gazebo_angled_image_one.jpg"
@@ -18,8 +20,18 @@ def main():
     camera2, camera3 = CameraDTO(2), CameraDTO(3)
     coordinates = FeatureDetect.find_all_corners_3d(camera2, camera3)
 
+    g03 = CameraDTO.get_g(camera3.pose)
+    world_coordinates = np.hstack((coordinates, np.ones((len(coordinates), 1))))
+    world_coordinates = g03.dot(world_coordinates.T).T
+    world_coordinates = world_coordinates[:, :3]
+
+    ImageMatching.scatter3d(world_coordinates)
+
+    img_coords = ImageMatching.project_3d_to_cam(coordinates, camera3)
+    ImageMatching.draw_points(camera2.image, img_coords)
+
     with open(OUTPUT_FILE, "w") as file:
-        for coord in coordinates:
+        for coord in world_coordinates:
             file.write("{}".format(coord))
 
 
