@@ -4,7 +4,7 @@ import rospy
 import cv2
 
 from feature_detect import FeatureDetect
-from camera import CameraDTO
+from global_constants.camera import CameraDTO
 
 
 IMAGE_IN_PATH = "images/gazebo_angled_image_one.jpg"

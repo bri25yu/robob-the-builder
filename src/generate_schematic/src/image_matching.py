@@ -5,7 +5,7 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
-from camera import CameraDTO
+from global_constants.camera import CameraDTO
 
 
 bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)

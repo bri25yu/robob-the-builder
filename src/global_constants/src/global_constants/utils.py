@@ -61,4 +61,7 @@ def save_image(img, name):
         Name of the image to save.
 
     """
-    cv2.imwrite(os.path.join(const.IMG_DIR, name), img)
+    if const.IMG_DIR not in name:
+        name = os.path.join(const.IMG_DIR, name)
+
+    cv2.imwrite(name, img)
