@@ -10,8 +10,9 @@ import actionlib
 
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from navigation_goal.srv import NavGoal
+from geometry_msgs.msg import Twist
 
-
+NUM_SECONDS_TO_ROTATE = 5
 def main():
     client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
     client.wait_for_server()
@@ -74,7 +75,29 @@ def get_nav_goals():
             # print("det_nav_goal service did not process request: " + str(exc))
 
     det_nav_goal.close()
+
+def do_a_spin():
+    velocity_publisher = rospy.Publisher('/mobile_base_controller/cmd_vel')
+    vel_msg = Twist()
+    
+    angular_speed = 2 * np.pi / NUM_SECONDS_TO_ROTATE
+    vel_msg.angular.z = angular_speed
+
+    t0 = rospy.Time.now().to_sec()
+    current_angle = 0
+
+    relative_angle = 2 * np.pi # 360 degrees
+    while (current_angle < relative_angle):
+        velocity_publisher.publish(vel_msg)
+        t1 = rospy.Time.now().to_sec()
+        current_angle = angular_speed * (t1 - t0)
+
+    vel_msg.angular.z = 0
+    velocity_publisher.publish(vel_msg)
+
+
         
 if __name__ == "__main__":
-    rospy.init_node('navigation_goal_node')
-    get_nav_goals()
+    rospy.init_node('navigation')
+    do_a_spin() # allow gmapping to see in all directions
+    # get_nav_goals()

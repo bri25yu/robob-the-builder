@@ -24,6 +24,13 @@ class Nav_goal:
 		self.goal = Point(0, 0, 0)
 		self.nav_goal_service = rospy.Service('det_nav_goal', NavGoal, self.get_nav_goal)
 
+
+	"""
+	new use:
+	find an occupied cell inside the range of the walls
+	but outside the range of where we'll build
+	TODO: THIS
+	"""
 	def det_nav_goal(self, world_map):
 		# I don't care where I am; I only care about where i need to go
 		# could pass it as service into mover node?
@@ -34,9 +41,11 @@ class Nav_goal:
 		y_origin = world_map.info.origin.position.y
 		grid = world_map.data
 
+		#total size: 20 y, 10 x
+
 		# map is large, so randomly sample
 		# TODO: need to kill node somehow
-		found_unknown = False
+		found_block = False
 		for _ in range(NUM_SAMPLES):
 			col = np.random.randint(cols)
 			row = np.random.randint(rows)
@@ -63,7 +72,9 @@ def subscribe_to_map():
 	rospy.spin()
 
 if __name__ == '__main__':
+	"""
 	try:
 		subscribe_to_map()
 	except rospy.ROSInterruptException:
 		pass
+	"""
