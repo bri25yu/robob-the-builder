@@ -55,7 +55,7 @@ class ImageMatching:
         image = image.copy()
         for px, py in points:
             u, v = int(px), int(py)
-            image = cv2.circle(image, (u, v), radius=1, color=color, thickness=-1)
+            image = cv2.circle(image, (u, v), radius=3, color=color, thickness=-1)
         plt.imshow(image)
         if save_name is not None:
             gutils.save_image(image, save_name)
@@ -191,6 +191,7 @@ class ImageMatching:
             result = ImageMatching.least_squares_triangulate(left_matches[i] + (1,), right_matches[i] + (1,), R, T, left_intrinsic, right_intrinsic)
             if result is not None:
                 coordinates.append(result)
+        print("coordinate length", len(coordinates))
         return coordinates
 
     @staticmethod
@@ -221,7 +222,6 @@ class ImageMatching:
         # print(lambda_1, lambda_2)
         x_1 = np.reshape(x_1, (3,))
         x_2 = np.reshape(x_2, (3,))
-
         if lambda_1 > 0 and lambda_2 > 0:
             X1 = lambda_2 * x_2
             X2 = (lambda_1  * np.matmul(R, x_1)) + T
