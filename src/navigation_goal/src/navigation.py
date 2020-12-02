@@ -100,4 +100,4 @@ def do_a_spin():
 if __name__ == "__main__":
     rospy.init_node('navigation')
     do_a_spin() # allow gmapping to see in all directions
-    # get_nav_goals()
+    get_nav_goals()
