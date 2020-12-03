@@ -20,9 +20,12 @@ OUTPUT_FILE = "output/schematic.txt"
 def main():
     rospy.init_node("schematic_node", anonymous = True)
     #idea: take all points and round coordinates to nearest multiples
-    world_coordinates = get_coordinates_for_pair(2, 3)
-    for i in range(2, 7):
-        world_coordinates = np.vstack((world_coordinates, get_coordinates_for_pair(2 * i, 2 * i + 1)))
+    world_coordinates = get_coordinates_for_pair(0, 1)
+    for i in range(1, 4):
+        new_pair_coordinates = get_coordinates_for_pair(2 * i, 2 * i + 1)
+        if len(new_pair_coordinates) != 0:
+            world_coordinates = np.vstack((world_coordinates, new_pair_coordinates))
+
     #remove duplicates
     world_coordinates = unique_rows(world_coordinates)
 
@@ -43,11 +46,16 @@ def main():
         z -= z_diff
         print(world_coordinates)
 
-    final_coordinates = filtered_layers[0]
-    print(final_coordinates)
+    world_coordinates = filtered_layers[0]
     for i in range(1, len(filtered_layers)):
-        final_coordinates = np.vstack((final_coordinates, filtered_layers[i]))
-    world_coordinates = apply_square_filter(world_coordinates)
+        world_coordinates = np.vstack((world_coordinates, filtered_layers[i]))
+
+    #add points from first layer to second layer
+    first_layer = np.array([c for c in world_coordinates if c[2] == 0])
+    new_second_layer_points = np.array([[c[0], c[1], c[2] + z_diff] for c in first_layer])
+    world_coordinates = np.vstack((world_coordinates, new_second_layer_points))
+    world_coordinates = unique_rows(world_coordinates)
+
     ImageMatching.scatter3d(np.array(world_coordinates))
 
 
@@ -66,7 +74,8 @@ def apply_square_filter(coordinates):
                             [(x + x_diff, y, z), (x, y - y_diff, z), (x + x_diff, y - y_diff, z)],
                             [(x - x_diff, y, z), (x, y + y_diff, z), (x - x_diff, y + y_diff, z)]]
         for square in possible_squares:
-            if square[0] in coordinate_set and square[1] in coordinate_set and square[2] in coordinate_set:
+            square_corners = [square[i] in coordinate_set for i in range(3)]
+            if sum(square_corners) >= 3:
                 filtered_coordinates.append(coordinate)
     return np.array(filtered_coordinates)
 
@@ -82,7 +91,11 @@ def get_coordinates_for_pair(n1, n2):
     camera3_coordinates = camera3_coordinates.T
     camera3_coordinates = np.hstack((camera3_coordinates, np.ones((camera3_coordinates.shape[0], 1))))
     world_coordinates = g03.dot(camera3_coordinates.T).T
-    world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 2], .12, 0, .1))]
+    #remove points with z-coordinate that doesn't make sense
+    world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 2], .12, 0, .02))]
+    world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 1], .06, 0, .02))]
+    world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 0], .06, 2, .02))]
+
 
     rounded_world_coordinates = []
     for coordinate in world_coordinates:
@@ -94,11 +107,14 @@ def get_coordinates_for_pair(n1, n2):
 
     return np.array(rounded_world_coordinates)
 
+def reject_outliers(data, m=2):
+    return data[abs(data - np.mean(data)) < m * np.std(data)]
+
 def round_nearest(number, offset, multiple):
     return round((number - offset) / multiple) * multiple + offset
 
 def close_to_multiples_of(coordinates, multiple, offset, tolerance = .05):
-    return np.argwhere(np.isclose((coordinates - offset) % multiple, 0, rtol = tolerance) | np.isclose((coordinates - offset) % multiple, multiple, rtol = tolerance))
+    return np.argwhere(np.isclose((coordinates - offset) % multiple, 0, atol = tolerance) | np.isclose((coordinates - offset) % multiple, multiple, atol = tolerance))
 
 if __name__ == "__main__":
     main()

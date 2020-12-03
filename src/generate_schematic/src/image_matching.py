@@ -35,14 +35,17 @@ class ImageMatching:
 
         # Find matching corners in both images
         matches = bf.match(des1, des2)
-        inlier_mask = ImageMatching.FilterByEpipolarConstraint(camera1.intrinsic_matrix, camera2.intrinsic_matrix, kp1, kp2, R21, T21, .02, matches)
+        inlier_mask = ImageMatching.FilterByEpipolarConstraint(camera1.intrinsic_matrix, camera2.intrinsic_matrix, kp1, kp2, R21, T21, .01, matches)
         filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
         left_matches = [kp1[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))]
         right_matches = [kp2[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))]
         coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R21, T21, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
         coordinates = np.reshape(coordinates, (len(coordinates), 3))
-
+        # left_projection = np.matmul(camera1.intrinsic_matrix, np.linalg.inv(camera1.get_g(camera1.pose))[:3])
+        # right_projection =  np.matmul(camera2.intrinsic_matrix, np.linalg.inv(camera2.get_g(camera2.pose))[:3])
         return coordinates
+
+
 
     @staticmethod
     def draw_matches(image1, keypoints1, image2, keypoints2, matches):
