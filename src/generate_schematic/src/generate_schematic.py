@@ -91,15 +91,15 @@ def unique_rows(a):
 
 def get_coordinates_for_pair(n1, n2):
     camera2, camera3 = CameraDTO(n1), CameraDTO(n2)
-    camera3_coordinates = FeatureDetect.find_all_corners_3d(camera2, camera3).T
+    camera3_coordinates = FeatureDetect.find_all_corners_3d(camera2, camera3, epipolar_threshold=0.01).T
     g03 = CameraDTO.get_g(camera3.pose)
     camera3_coordinates = camera3_coordinates.T
     camera3_coordinates = np.hstack((camera3_coordinates, np.ones((camera3_coordinates.shape[0], 1))))
     world_coordinates = g03.dot(camera3_coordinates.T).T
     #remove points with z-coordinate that doesn't make sense
     world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 2], .12, 0, .02))]
-    world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 1], .06, 0, .02))]
-    world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 0], .06, 2, .02))]
+    world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 1], .06, 0, .01))]
+    world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 0], .06, 2, .01))]
 
     rounded_world_coordinates = []
     for coordinate in world_coordinates:

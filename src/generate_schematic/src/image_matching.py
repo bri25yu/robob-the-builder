@@ -35,7 +35,7 @@ class ImageMatching:
 
         # Find matching corners in both images
         matches = bf.match(des1, des2)
-        inlier_mask = ImageMatching.FilterByEpipolarConstraint(camera1.intrinsic_matrix, camera2.intrinsic_matrix, kp1, kp2, R21, T21, .01, matches)
+        inlier_mask = ImageMatching.FilterByEpipolarConstraint(camera1.intrinsic_matrix, camera2.intrinsic_matrix, kp1, kp2, R21, T21, epipolar_threshold, matches)
         filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
         left_matches = [kp1[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))]
         right_matches = [kp2[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))]
