@@ -19,11 +19,12 @@ OUTPUT_FILE = "output/schematic.txt"
 def main():
     rospy.init_node("schematic_node", anonymous = True)
     #idea: take all points and round coordinates to nearest multiples
-    world_coordinates = get_coordinates_for_pair(0, 1)
-    for i in range(1, 12):
+    world_coordinates = []
+    for i in range(12):
         new_pair_coordinates = get_coordinates_for_pair(2 * i, 2 * i + 1)
         if len(new_pair_coordinates) != 0:
-            world_coordinates = np.vstack((world_coordinates, new_pair_coordinates))
+            world_coordinates.append(new_pair_coordinates)
+    world_coordinates = np.vstack(world_coordinates)
 
     #remove duplicates
     world_coordinates = unique_rows(world_coordinates)
