@@ -45,8 +45,6 @@ class ImageMatching:
         # right_projection =  np.matmul(camera2.intrinsic_matrix, np.linalg.inv(camera2.get_g(camera2.pose))[:3])
         return coordinates
 
-
-
     @staticmethod
     def draw_matches(image1, keypoints1, image2, keypoints2, matches):
         img3 = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches, None, flags=2)
@@ -65,16 +63,18 @@ class ImageMatching:
         plt.show()
 
     @staticmethod
-    def scatter3d(points):
-        fig = plt.figure()
-        ax = Axes3D(fig)
+    def scatter3d(points, ax=None):
+        if ax == None:
+            fig = plt.figure()
+            ax = Axes3D(fig)
 
         x_coords = points[:, 0]
         y_coords = points[:, 1]
         z_coords = points[:, 2]
 
         ax.scatter(x_coords, y_coords, z_coords)
-        plt.show()
+        if ax == None:
+            plt.show()
 
     @staticmethod
     def project_3d_to_cam(coords, camera):

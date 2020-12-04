@@ -17,10 +17,12 @@ CAMERA_DATA = [
 
 ]
 
+zs = [0.33, 0.66, 1]
 deltas = [(.3, .3, np.pi + np.pi/4), (-.3, .3, 2 * np.pi -np.pi/4), (-.3, -.3, np.pi/4), (.3, -.3, np.pi/2 + np.pi/4)]
 for delta in deltas:
-    CAMERA_DATA.append([(x + delta[0], y + delta[1], 1), (0 , 1.15, delta[2])])
-    CAMERA_DATA.append([(x + delta[0] + .01, y + delta[1] + .01, 1), (0 , 1.15, delta[2])])
+    for z in zs:
+        CAMERA_DATA.append([(x + delta[0], y + delta[1], z), (0 , 1.15, delta[2])])
+        CAMERA_DATA.append([(x + delta[0] + .01, y + delta[1] + .01, z), (0 , 1.15, delta[2])])
 
 STRUCTURE_TO_BUILD = [  # Passed into WorldSimulation.add_square_2d
     [x, y, 3, 0],

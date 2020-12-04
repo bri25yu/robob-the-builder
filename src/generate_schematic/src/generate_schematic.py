@@ -9,7 +9,6 @@ from global_constants.camera import CameraDTO
 from image_matching import ImageMatching
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from sklearn.cluster import DBSCAN
 
 
 IMAGE_IN_PATH = "images/gazebo_angled_image_one.jpg"
@@ -21,13 +20,14 @@ def main():
     rospy.init_node("schematic_node", anonymous = True)
     #idea: take all points and round coordinates to nearest multiples
     world_coordinates = get_coordinates_for_pair(0, 1)
-    for i in range(1, 4):
+    for i in range(1, 12):
         new_pair_coordinates = get_coordinates_for_pair(2 * i, 2 * i + 1)
         if len(new_pair_coordinates) != 0:
             world_coordinates = np.vstack((world_coordinates, new_pair_coordinates))
 
     #remove duplicates
     world_coordinates = unique_rows(world_coordinates)
+    before_apply_square_world_coordinates = world_coordinates.copy()[world_coordinates[:, 2] >= 0]
 
     #go downward layer by layer, and at each layer remove non-squares and project points to lower layers
     max_z_coordinate = max(world_coordinates[:, 2])
@@ -56,8 +56,13 @@ def main():
     world_coordinates = np.vstack((world_coordinates, new_second_layer_points))
     world_coordinates = unique_rows(world_coordinates)
 
-    ImageMatching.scatter3d(np.array(world_coordinates))
+    fig = plt.figure(figsize=plt.figaspect(0.5))
 
+    ax1 = fig.add_subplot(1, 3, 1, projection='3d')
+    ax2 = fig.add_subplot(1, 3, 2, projection='3d')
+    ImageMatching.scatter3d(np.array(before_apply_square_world_coordinates), ax1)
+    ImageMatching.scatter3d(np.array(world_coordinates), ax2)
+    plt.show()
 
 
 def apply_square_filter(coordinates):
@@ -95,7 +100,6 @@ def get_coordinates_for_pair(n1, n2):
     world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 2], .12, 0, .02))]
     world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 1], .06, 0, .02))]
     world_coordinates = world_coordinates[np.ravel(close_to_multiples_of(world_coordinates[:, 0], .06, 2, .02))]
-
 
     rounded_world_coordinates = []
     for coordinate in world_coordinates:
