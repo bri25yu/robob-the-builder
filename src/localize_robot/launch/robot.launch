@@ -48,10 +48,11 @@
       <param name="odom_frame" value="/mobile_base_controller/odom" />
     ?>
     <param name="base_frame" value="base_footprint" />
-    <param name="xmin" value="0" />
-    <param name="ymin" value="0" />
-    <param name="xmax" value="400.0" />
-    <param name="ymax" value="400.0" />
+    <param name="xmin" value="-20" />
+    <param name="ymin" value="-20" />
+    <param name="xmax" value="20" />
+    <param name="ymax" value="20" />
+    <param name="throttle_scans" value="5" />
   </node>
 
   <node name="rviz" pkg="rviz" type="rviz"

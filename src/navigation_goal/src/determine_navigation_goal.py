@@ -21,15 +21,14 @@ NUM_SAMPLES = 1000
 class Nav_goal:
 
 	def __init__(self):
-		self.goal = Point(0, 0, 0)
+		self.holding_block = False
+		self.block = Point(0, 0, 0)
 		self.nav_goal_service = rospy.Service('det_nav_goal', NavGoal, self.get_nav_goal)
-
 
 	"""
 	new use:
 	find an occupied cell inside the range of the walls
 	but outside the range of where we'll build
-	TODO: THIS
 	"""
 	def det_nav_goal(self, world_map):
 		# I don't care where I am; I only care about where i need to go
@@ -42,28 +41,27 @@ class Nav_goal:
 		grid = world_map.data
 
 		#total size: 20 y, 10 x
-
-		# map is large, so randomly sample
-		# TODO: need to kill node somehow
 		found_block = False
-		for _ in range(NUM_SAMPLES):
-			col = np.random.randint(cols)
-			row = np.random.randint(rows)
-			if grid[row * cols + col] == -1:
-				self.goal.x = col * res + x_origin
-				self.goal.y = row * res + y_origin
-				found_unknown = True
-				break
+		for r in range(rows // 2):
+			for c in range(cols):
+				if grid[r * c + c] > 70:
+					self.block.x = c * res + x_origin
+					self.block.y = r * res + y_origin
+					found_block = True
+					break
+
 		print("goal is updated to " + str(self.goal.x) + ", " + str(self.goal.y))
-		if not found_unknown:
+		if not found_block:
 			self.nav_goal_service.shutdown()
 			rospy.signal_shutdown("Map is sufficiently explored.")
 
 
 
 	def get_nav_goal(self, _):
-		print("service is called")
-		return self.goal
+		#if self.holding_block:
+		#go to next place we wanna put the block
+		#else:
+		return self.block
 
 def subscribe_to_map():
 	rospy.init_node('det_nav_goal_server')

@@ -36,7 +36,6 @@ def move_to_goal(goal_position):
     print("move_to_goal is called with" + str(goal_position.x) + " " + str(goal_position.y))
     client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
     client.wait_for_server()
-    print("does it get here")
 
     goal = MoveBaseGoal()
     goal.target_pose.header.frame_id = "map"
@@ -55,6 +54,7 @@ def move_to_goal(goal_position):
         return client.get_result()
 
 def get_nav_goals():
+    do_a_spin() # allow gmapping to see in all directions
     
     rospy.wait_for_service('det_nav_goal', timeout=120)
     det_nav_goal = rospy.ServiceProxy('det_nav_goal', NavGoal, persistent=True)
@@ -63,16 +63,16 @@ def get_nav_goals():
     done = False
     while (not done):
         try:
-            print("hello1")
             goal_position = det_nav_goal()
-            print("hello2")
             move_to_goal(goal_position.position)
-            print("hello3")
+            # TODO: pick up block
         except rospy.ServiceException as exc:
-            print("Exploration complete.")
+            print("Building complete.")
             done = True
             # We're done when det_nav_goal shuts down
             # print("det_nav_goal service did not process request: " + str(exc))
+
+        do_a_spin() # allow gmapping to see in all directions
 
     det_nav_goal.close()
 
@@ -99,5 +99,4 @@ def do_a_spin():
         
 if __name__ == "__main__":
     rospy.init_node('navigation')
-    do_a_spin() # allow gmapping to see in all directions
     get_nav_goals()
