@@ -5,7 +5,6 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
-from global_constants import utils as gutils
 from global_constants.camera import CameraDTO
 
 
@@ -31,36 +30,17 @@ class ImageMatching:
         # Calculate R/T transform between cameras
         g21, g01, g02 = CameraDTO.get_transformation(camera1, camera2)
         R21 = g21[0:3, 0:3]
-        T21 = g21[0:3, -1]
+        T21 = np.reshape(g21[0:3, -1], (3, 1))
 
         # Find matching corners in both images
         matches = bf.match(des1, des2)
         inlier_mask = ImageMatching.FilterByEpipolarConstraint(camera1.intrinsic_matrix, camera2.intrinsic_matrix, kp1, kp2, R21, T21, epipolar_threshold, matches)
         filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
-        left_matches = [kp1[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))]
-        right_matches = [kp2[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))]
+        left_matches = np.array([kp1[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))])
+        right_matches = np.array([kp2[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))])
         coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R21, T21, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
         coordinates = np.reshape(coordinates, (len(coordinates), 3))
-        # left_projection = np.matmul(camera1.intrinsic_matrix, np.linalg.inv(camera1.get_g(camera1.pose))[:3])
-        # right_projection =  np.matmul(camera2.intrinsic_matrix, np.linalg.inv(camera2.get_g(camera2.pose))[:3])
         return coordinates
-
-    @staticmethod
-    def draw_matches(image1, keypoints1, image2, keypoints2, matches):
-        img3 = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches, None, flags=2)
-        plt.imshow(img3)
-        plt.show()
-
-    @staticmethod
-    def draw_points(image, points, color=(255, 0, 0), save_name=None):
-        image = image.copy()
-        for px, py in points:
-            u, v = int(px), int(py)
-            image = cv2.circle(image, (u, v), radius=3, color=color, thickness=-1)
-        plt.imshow(image)
-        if save_name is not None:
-            gutils.save_image(image, save_name)
-        plt.show()
 
     @staticmethod
     def scatter3d(points, ax=None):
@@ -75,32 +55,6 @@ class ImageMatching:
         ax.scatter(x_coords, y_coords, z_coords)
         if ax == None:
             plt.show()
-
-    @staticmethod
-    def project_3d_to_cam(coords, camera):
-        """
-        Parameters
-        ----------
-        coords: list
-            A list of (3, 1) coordinates in the world frame.
-        camera: CameraDTO
-
-        Returns
-        -------
-        cam_coords: list
-            The input coords in the camera world.
-
-        """
-        intrinsic = camera.intrinsic_matrix
-        g = CameraDTO.get_g(camera.pose)
-        cam_coords = []
-        for coord in coords:
-            # coord = [2.06, -.06, 0]
-            new_coord = np.linalg.inv(g).dot(np.hstack((coord, [1])))[:3]
-            cam_coord = intrinsic.dot(new_coord)
-            result = cam_coord[:2] / new_coord[2]
-            cam_coords.append(result)
-        return cam_coords
 
     # Helpers--------------------------------------------------------------------------------------
 
@@ -176,59 +130,70 @@ class ImageMatching:
             The error of the candidate match.
 
         """
-        # calculate the distance between the line l1 and x1.
-        d1 = ImageMatching.epipolar_distance(x1, l1)
+        return ImageMatching.epipolar_distance(x1, l1) + ImageMatching.epipolar_distance(x2, l2)
 
-        # calculate the distance between the line l2 and x2.
-        d2 = ImageMatching.epipolar_distance(x2, l2)
+    @staticmethod
+    def lift(arr):
+        """
+        Parameters
+        ----------
+        arr: (n, d)-shaped np.ndarray
 
-        # compute the total error.
-        error = d1 + d2
+        Returns
+        -------
+        arr_lifted: (n, d+1)-shaped np.ndarray
+            arr with ones appended for each coordinate.
 
-        return error
+        """
+        return np.hstack((arr, np.ones((len(arr), 1))))
+
+    @staticmethod
+    def apply_transform(coordinates, transform):
+        """
+        Parameters
+        ----------
+        coordinates: (n, d)-shaped np.ndarray
+        transform: (d, d)-shaped np.ndarray
+
+        """
+        return transform.dot(coordinates.T).T
 
     @staticmethod
     def get_matched_3d_coordinates(left_matches, right_matches, R, T, left_intrinsic, right_intrinsic):
-        coordinates = []
-        for i in range(len(left_matches)):
-            result = ImageMatching.least_squares_triangulate(left_matches[i] + (1,), right_matches[i] + (1,), R, T, left_intrinsic, right_intrinsic)
-            if result is not None:
-                coordinates.append(result)
-        print("coordinate length", len(coordinates))
-        return coordinates
-
-    @staticmethod
-    def least_squares_triangulate(x_1, x_2, R, T, left_intrinsic, right_intrinsic):
         """
-        Computes the coordinates of the point represented by the corresponding pair (x1, x2).
+        Computes the coordinates of the point represented by each pair of matches.
         x1, x2 are given in unnormalized homogeneous coordinates.
         You should compute the coordinates X of the point written in the reference frame of the
         right camera.
 
         (R, T) is the transform g_21.
 
-        left_intrinsic and right_intrinsic are both numpy arrays of size (3, 3) representing the
-        3x3 intrinsic matrices of the left and right cameras respectively.
-        """
-        # print("R", R)
-        # print("T", T)
-        left_intrinsic_inv = np.linalg.inv(left_intrinsic)
-        right_intrinsic_inv = np.linalg.inv(right_intrinsic)
-        x_1 = np.reshape(x_1, (3, 1))
-        x_2 = np.reshape(x_2, (3, 1))
-        x_1 = np.matmul(left_intrinsic_inv, x_1)
-        x_2 = np.matmul(right_intrinsic_inv, x_2)
+        Parameters
+        ----------
+        left_matches: (n, 2)-shaped np.ndarray
+        right_matches: (n, 2)-shaped np.ndarray
+        R: (3, 3)-shaped np.ndarray
+        T: (3, 1)-shaped np.ndarray
+        left_intrinsic: (3, 3)-shaped np.ndarray
+        right_intrinsic: (3, 3)-shaped np.ndarray
 
-        A = np.concatenate((-np.matmul(R, x_1), x_2), axis = 1)
-        # Use least squares to solve for lambda1 and lambda2.
-        lambda_1, lambda_2 = np.linalg.lstsq(A, T)[0]
-        # print(lambda_1, lambda_2)
-        x_1 = np.reshape(x_1, (3,))
-        x_2 = np.reshape(x_2, (3,))
-        if lambda_1 > 0 and lambda_2 > 0:
-            X1 = lambda_2 * x_2
-            X2 = (lambda_1  * np.matmul(R, x_1)) + T
-            X = .5 * (X1 + X2)
-            return X
-        else:
-            return None
+        """
+        left_matches, right_matches = ImageMatching.lift(left_matches), ImageMatching.lift(right_matches)
+
+        left_matches = ImageMatching.apply_transform(left_matches, np.linalg.inv(left_intrinsic))
+        right_matches = ImageMatching.apply_transform(right_matches, np.linalg.inv(right_intrinsic))
+
+        left_matches_rotated = ImageMatching.apply_transform(left_matches, R)
+
+        A = np.empty((2 * len(left_matches), 3))
+        A[0::2], A[1::2] = -left_matches_rotated, right_matches
+        A = A.T
+
+        lambdas = np.hstack(np.linalg.lstsq(A[:, 2*i: 2*i+2], T)[0] for i in range(len(left_matches)))
+        indices = np.ravel(np.argwhere((lambdas[0] > 0) & (lambdas[1] > 0)))
+        left_matches_rotated, right_matches = left_matches_rotated[indices], right_matches[indices]
+        lambdas = lambdas[:, indices].T
+
+        X1 = lambdas[:, 0:1] * right_matches
+        X2 = (lambdas[:, 1:2] * left_matches_rotated) + np.ravel(T)
+        return .5 * (X1 + X2)
