@@ -45,7 +45,8 @@ class Nav_goal:
 		for r in range(rows // 2):
 			for c in range(cols):
 				if grid[r * c + c] > 70:
-					self.block.x = c * res + x_origin
+					self.block.x = c * res + x_origin - 0.06 
+					# subtract block length so we don't hit the block
 					self.block.y = r * res + y_origin
 					found_block = True
 					break

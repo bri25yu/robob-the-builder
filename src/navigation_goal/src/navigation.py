@@ -40,7 +40,7 @@ def move_to_goal(goal_position):
     goal = MoveBaseGoal()
     goal.target_pose.header.frame_id = "map"
     goal.target_pose.header.stamp = rospy.Time.now()
-    goal.target_pose.pose.position = goal.position
+    goal.target_pose.pose.position = goal_position
     goal.target_pose.pose.orientation.w = 1.0
     
     client.send_goal(goal)
