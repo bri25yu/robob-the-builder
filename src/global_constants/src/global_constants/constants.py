@@ -18,7 +18,8 @@ CAMERA_DATA = [
 ]
 
 zs = [0.6, 1.2, 1.8]
-deltas = [(.3, .3, np.pi + np.pi/4), (-.3, .3, 2 * np.pi -np.pi/4), (-.3, -.3, np.pi/4), (.3, -.3, np.pi/2 + np.pi/4)]
+delta = .325
+deltas = [(delta, delta, np.pi + np.pi/4), (-delta, delta, 2 * np.pi -np.pi/4), (-delta, -delta, np.pi/4), (delta, -delta, np.pi/2 + np.pi/4)]
 for delta in deltas:
     for z in zs:
         CAMERA_DATA.append([(x + delta[0], y + delta[1], z), (0 , 1.15, delta[2])])

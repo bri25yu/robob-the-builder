@@ -32,23 +32,23 @@ def main():
     #remove duplicates
     world_coordinates = unique_rows(world_coordinates)
     before_apply_square_world_coordinates = world_coordinates.copy()[world_coordinates[:, 2] >= 0]
-    print(world_coordinates)
+    # print(world_coordinates)
     #go downward layer by layer, and at each layer remove non-squares and project points to lower layers
     max_z_coordinate = max(world_coordinates[:, 2])
     z = max_z_coordinate
     z_diff = BLOCK_Z
     filtered_layers = []
     while (z >= 0):
-        print("z", z)
+        # print("z", z)
         cur_layer = np.array([c for c in world_coordinates if np.isclose(c[2], z)])
-        print(cur_layer)
+        # print(cur_layer)
         cur_layer = apply_square_filter(cur_layer)
         if len(cur_layer) != 0:
             filtered_layers.append(cur_layer)
         if z != 0:
             for point in cur_layer:
                 world_coordinates = np.vstack((world_coordinates, np.array([point[0], point[1], z - z_diff])))
-        print("world coordinates after pushiing down points", world_coordinates)
+        # print("world coordinates after pushiing down points", world_coordinates)
         world_coordinates = unique_rows(world_coordinates)
         z -= z_diff
 
@@ -82,8 +82,13 @@ def apply_square_filter(coordinates):
                             [(x + x_diff, y, z), (x, y - y_diff, z), (x + x_diff, y - y_diff, z)],
                             [(x - x_diff, y, z), (x, y + y_diff, z), (x - x_diff, y + y_diff, z)]]
         for square in possible_squares:
-            square_corners = [np.any(np.isclose(coordinates, square[i])) for i in range(3)]
-            if sum(square_corners) >= 3:
+            square_corners = 0
+            for i in range(3):
+                for c in coordinates:
+                    if np.allclose(c, square[i]):
+                        square_corners += 1
+                        break
+            if square_corners >= 3:
                 filtered_coordinates.append(coordinate)
     return np.array(filtered_coordinates)
 
