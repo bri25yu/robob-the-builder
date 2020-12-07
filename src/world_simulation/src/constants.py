@@ -26,6 +26,20 @@ class Block:
         DEFAULT = "<material>Gazebo/Red</material>"
         TEMPLATE = "<material>Gazebo/{}</material>"
 
+    class ColorGeometry:
+        INITIAL = "{COLOR_REPLACE_GEOMETRY}"
+        ARUCO = '<mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm.dae" scale="1 1 8"/>'
+        COLORED = '<box size="0.05 0.05 0.40" />'
+
+    class ColorMaterial:
+        INITIAL = "{COLOR_REPLACE_MATERIAL}"
+        ARUCO = ""
+        COLORED = '<gazebo reference="block">' +\
+        "<material>Gazebo/Red</material>" +\
+        "<mu1>1000</mu1>" +\
+        "<mu2>1000</mu2>" +\
+      "</gazebo>"
+
     class Size:
         START_FLAG = "<box size="
         END_FLAG = "/>"

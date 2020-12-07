@@ -22,13 +22,13 @@ import utils
 
 def main():
     world_sim = WorldSimulation(gazebo_only=True)
-    create_exploration_world(world_sim)
-    # create_world_with_structure(world_sim)
+    # create_exploration_world(world_sim)
+    create_world_with_structure(world_sim)
 
 
 def create_exploration_world(world_sim):
     for pos in gconst.EXPLORATION_BLOCKS:
-        world_sim.add_block(Pose(position=Point(*pos)))
+        world_sim.add_block(Pose(position=Point(*pos)), colored = False)
 
 
 def create_world_with_structure(world_sim):
@@ -98,7 +98,7 @@ class WorldSimulation:
         camera_xml = self.camera_xml.replace(const.CAMERA_DEFAULT_NAME, name)
         utils.add_block_gazebo(const.Gazebo.SPAWN_SDF_MODEL, camera_xml, pose, self.gazebo_reference_frame, name)
 
-    def add_block(self, pose, color=None):
+    def add_block(self, pose, color=None, colored = True):
         """
         Adds a block to both Gazebo and RViz at pose based on the block_reference_frame
 
@@ -111,7 +111,7 @@ class WorldSimulation:
 
         """
         name = "block{0}".format(self.num_blocks)
-        self.add_block_gazebo(pose, self.gazebo_reference_frame, name, color=color)
+        self.add_block_gazebo(pose, self.gazebo_reference_frame, name, color=color, colored = colored)
         if not self.gazebo_only:
             size = self.block_size
             self.add_block_rviz(pose, self.rviz_reference_frame, name, size)
@@ -169,10 +169,16 @@ class WorldSimulation:
     def initialize_add_block(self):
         self.colors = cycle(const.Colors)
 
-    def add_block_gazebo(self, pose, reference_frame, name, color=None):
+    def add_block_gazebo(self, pose, reference_frame, name, color=None, colored = True):
         colored_xml = self.block_xml
-        if color is not None:
-            colored_xml = self.block_xml.replace(const.Block.Color.DEFAULT, const.Block.Color.TEMPLATE.format(color))
+        if colored:
+            colored_xml = colored_xml.replace(const.Block.ColorGeometry.INITIAL, const.Block.ColorGeometry.COLORED)
+            colored_xml = colored_xml.replace(const.Block.ColorMaterial.INITIAL, const.Block.ColorMaterial.COLORED)
+            if color is not None:
+                colored_xml = colored_xml.replace(const.Block.Color.DEFAULT, const.Block.Color.TEMPLATE.format(color))
+        else:
+            colored_xml = colored_xml.replace(const.Block.ColorGeometry.INITIAL, const.Block.ColorGeometry.ARUCO)
+            colored_xml = colored_xml.replace(const.Block.ColorMaterial.INITIAL, const.Block.ColorMaterial.ARUCO)
         utils.add_block_gazebo(const.Gazebo.SPAWN_URDF_MODEL, colored_xml, pose, reference_frame, name)
 
     def add_block_rviz(self, pose, reference_frame, name, size):
