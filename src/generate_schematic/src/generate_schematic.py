@@ -15,6 +15,9 @@ IMAGE_IN_PATH = "images/gazebo_angled_image_one.jpg"
 IMAGE_OUT_NAME = "gazebo_angled_image_one_clustering.jpg"
 
 OUTPUT_FILE = "output/schematic.txt"
+BLOCK_X = 0.05
+BLOCK_Y = 0.05
+BLOCK_Z = .4
 
 def main():
     rospy.init_node("schematic_node", anonymous = True)
@@ -29,27 +32,30 @@ def main():
     #remove duplicates
     world_coordinates = unique_rows(world_coordinates)
     before_apply_square_world_coordinates = world_coordinates.copy()[world_coordinates[:, 2] >= 0]
-
+    print(world_coordinates)
     #go downward layer by layer, and at each layer remove non-squares and project points to lower layers
     max_z_coordinate = max(world_coordinates[:, 2])
     z = max_z_coordinate
-    z_diff = .12
+    z_diff = BLOCK_Z
     filtered_layers = []
     while (z >= 0):
-        cur_layer = np.array([c for c in world_coordinates if c[2] == z])
+        print("z", z)
+        cur_layer = np.array([c for c in world_coordinates if np.isclose(c[2], z)])
+        print(cur_layer)
         cur_layer = apply_square_filter(cur_layer)
         if len(cur_layer) != 0:
             filtered_layers.append(cur_layer)
         if z != 0:
             for point in cur_layer:
                 world_coordinates = np.vstack((world_coordinates, np.array([point[0], point[1], z - z_diff])))
+        print("world coordinates after pushiing down points", world_coordinates)
         world_coordinates = unique_rows(world_coordinates)
         z -= z_diff
 
     world_coordinates = np.vstack(filtered_layers)
 
     #add points from first layer to second layer
-    first_layer = np.array([c for c in world_coordinates if c[2] == 0])
+    first_layer = np.array([c for c in world_coordinates if np.isclose(c[2], 0)])
     new_second_layer_points = np.array([[c[0], c[1], c[2] + z_diff] for c in first_layer])
     world_coordinates = np.vstack((world_coordinates, new_second_layer_points))
     world_coordinates = unique_rows(world_coordinates)
@@ -66,7 +72,7 @@ def apply_square_filter(coordinates):
     coordinate_set = set()
     for coordinate in coordinates:
         coordinate_set.add(tuple(coordinate))
-    x_diff, y_diff = 0.06, 0.06
+    x_diff, y_diff = BLOCK_X, BLOCK_Y
     #remove points that aren't part of squares
     filtered_coordinates = []
     for coordinate in coordinates:
@@ -76,7 +82,7 @@ def apply_square_filter(coordinates):
                             [(x + x_diff, y, z), (x, y - y_diff, z), (x + x_diff, y - y_diff, z)],
                             [(x - x_diff, y, z), (x, y + y_diff, z), (x - x_diff, y + y_diff, z)]]
         for square in possible_squares:
-            square_corners = [square[i] in coordinate_set for i in range(3)]
+            square_corners = [np.any(np.isclose(coordinates, square[i])) for i in range(3)]
             if sum(square_corners) >= 3:
                 filtered_coordinates.append(coordinate)
     return np.array(filtered_coordinates)
@@ -95,7 +101,7 @@ def get_coordinates_for_pair(n1, n2):
     #remove points with z-coordinate that doesn't make sense
     tolerances = np.array([0.01, 0.01, 0.02])
     offset = np.array([2, 0, 0])
-    multiple = np.array([0.06, 0.06, 0.12])
+    multiple = np.array([BLOCK_X, BLOCK_Y, BLOCK_Z])
     world_coordinates = world_coordinates[close_to_multiples_of(world_coordinates, multiple, offset, tolerances)]
     return round_nearest(world_coordinates, offset, multiple)
 

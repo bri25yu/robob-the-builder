@@ -38,6 +38,7 @@ class ImageMatching:
         filtered_matches = [m for m,b in zip(matches, inlier_mask) if b == 1]
         left_matches = np.array([kp1[filtered_matches[i].queryIdx].pt for i in range(len(filtered_matches))])
         right_matches = np.array([kp2[filtered_matches[i].trainIdx].pt for i in range(len(filtered_matches))])
+        # ImageMatching.draw_matches(camera1.image, kp1, camera2.image, kp2, filtered_matches)
         coordinates = ImageMatching.get_matched_3d_coordinates(left_matches, right_matches, R21, T21, camera1.intrinsic_matrix, camera2.intrinsic_matrix)
         coordinates = np.reshape(coordinates, (len(coordinates), 3))
         return coordinates
@@ -55,6 +56,12 @@ class ImageMatching:
         ax.scatter(x_coords, y_coords, z_coords)
         if ax == None:
             plt.show()
+
+    @staticmethod
+    def draw_matches(image1, keypoints1, image2, keypoints2, matches):
+        img3 = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches, None, flags=2)
+        plt.imshow(img3)
+        plt.show()
 
     # Helpers--------------------------------------------------------------------------------------
 

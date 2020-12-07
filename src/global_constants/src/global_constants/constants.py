@@ -17,7 +17,7 @@ CAMERA_DATA = [
 
 ]
 
-zs = [0.33, 0.66, 1]
+zs = [0.6, 1.2, 1.8]
 deltas = [(.3, .3, np.pi + np.pi/4), (-.3, .3, 2 * np.pi -np.pi/4), (-.3, -.3, np.pi/4), (.3, -.3, np.pi/2 + np.pi/4)]
 for delta in deltas:
     for z in zs:
