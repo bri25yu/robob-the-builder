@@ -44,7 +44,7 @@ class ImageMatching:
         return coordinates
 
     @staticmethod
-    def scatter3d(points, ax=None):
+    def scatter3d(points, ax=None, title=None):
         if ax == None:
             fig = plt.figure()
             ax = Axes3D(fig)
@@ -54,6 +54,9 @@ class ImageMatching:
         z_coords = points[:, 2]
 
         ax.scatter(x_coords, y_coords, z_coords)
+        if title is not None:
+            ax.set_title(title)
+
         if ax == None:
             plt.show()
 

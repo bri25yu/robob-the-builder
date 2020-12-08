@@ -6,6 +6,10 @@ import numpy as np
 IMG_DIR = "images"
 
 
+BLOCK_X = 0.05
+BLOCK_Y = 0.05
+BLOCK_Z = .4
+
 x, y = 2, 0
 CAMERA_DATA = [
     # [(x, y, 1), (0, np.pi / 2, 0)],
@@ -43,3 +47,11 @@ EXPLORATION_BLOCKS = [
     [-1, 4, 0],
     [1, -1, 0]
 ]
+
+
+tolerances = np.array([0.01, 0.01, 0.02])
+offset = np.array([2, 0, 0])
+multiple = np.array([BLOCK_X, BLOCK_Y, BLOCK_Z])
+
+
+CORNERS_OUTPUT_FILE = "output/schematic.txt"

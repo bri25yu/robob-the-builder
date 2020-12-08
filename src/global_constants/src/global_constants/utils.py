@@ -1,4 +1,5 @@
 import os
+import pickle
 
 import numpy as np
 import cv2
@@ -65,3 +66,60 @@ def save_image(img, name):
         name = os.path.join(const.IMG_DIR, name)
 
     cv2.imwrite(name, img)
+
+
+def unique_rows(a):
+    a = np.ascontiguousarray(a)
+    unique_a = np.unique(a.view([('', a.dtype)]*a.shape[1]))
+    return unique_a.view(a.dtype).reshape((unique_a.shape[0], a.shape[1]))
+
+
+def round_nearest(number, offset, multiple):
+    return np.round((number - offset) / multiple) * multiple + offset
+
+
+def close_to_multiples_of(coordinates, multiple, offset, tolerance=.05):
+    dists = np.abs(((coordinates - offset) % multiple) - (multiple / 2)) - (multiple / 2)
+    close = np.ones(len(coordinates))
+    for i in range(coordinates.shape[1]):
+        close = close * np.isclose(dists[:, i], 0, atol=tolerance[i])
+    return np.ravel(np.argwhere(close))
+
+
+def get_layers(coordinates):
+    heights = np.unique(coordinates[:, 2])
+    layers = []
+    for height in heights:
+        layer = unique_rows(coordinates[np.isclose(coordinates[:, 2], height)])
+        layer = layer[np.argsort(-layer[:, 1])]
+        layer = layer[np.argsort(-layer[:, 0])]
+        layers.append(layer)
+    return np.array(layers)
+
+
+def get_bottom_left_corners(coordinates):
+    """
+    Bottom left is defined as the min(x), min(y), min(z).d
+
+    Parameters
+    ----------
+    coordinates: (n, 3)-shaped np.ndarray
+
+    Returns
+    -------
+    bottom_left_corners: np.ndarray
+
+    """
+    max_x, max_y = np.max(coordinates[:, 0]), np.max(coordinates[:, 1])
+    return coordinates[np.ravel(np.argwhere(1 - (np.isclose(coordinates[:, 0], max_x) | np.isclose(coordinates[:, 1], max_y))))]
+
+
+def output_corners(layers, filename=const.CORNERS_OUTPUT_FILE):
+    with open(filename, "wb") as file:
+        pickle.dump(layers, file)
+
+
+def get_corners(filename=const.CORNERS_OUTPUT_FILE):
+    with open(filename, "rb") as file:
+        return get_layers(pickle.load(file))
+
