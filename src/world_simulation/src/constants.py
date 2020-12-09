@@ -36,8 +36,8 @@ class Block:
         ARUCO = ""
         COLORED = '<gazebo reference="block">' +\
         "<material>Gazebo/Red</material>" +\
-        "<mu1>1000</mu1>" +\
-        "<mu2>1000</mu2>" +\
+        "<mu1>0.75</mu1>" +\
+        "<mu2>0.75</mu2>" +\
       "</gazebo>"
 
     class Size:
