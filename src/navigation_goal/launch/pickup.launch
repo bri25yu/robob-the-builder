@@ -7,7 +7,7 @@
       <remap from="/camera_info"       to="/xtion/rgb/camera_info" />
       <remap from="/image"             to="/xtion/rgb/image_rect_color" />
       <param name="image_is_rectified" value="True"/>
-      <param name="marker_size"        value="0.035"/>
+      <param name="marker_size"        value="0.045"/>
       <param name="marker_id"          value="582"/>
       <param name="reference_frame"    value="/base_footprint"/>   <!-- frame in which the marker pose will be expressed -->
       <param name="camera_frame"       value="xtion_rgb_optical_frame"/>
@@ -19,7 +19,7 @@
   <rosparam command="load" file="$(find tiago_pick_demo)/config/pick_motions.yaml" /> 
 
   <!-- Pick & place server -->
-  <node name="pick_and_place_server" pkg="tiago_pick_demo" type="pick_and_place_server.py" output="screen">
+  <node name="pick_and_place_server" pkg="navigation_goal" type="pick_and_place_server.py" output="screen">
       <rosparam command="load" file="$(find tiago_pick_demo)/config/pick_and_place_params.yaml" />
       <param name="object_width"  value="0.05" />
       <param name="object_height" value="0.4" />
@@ -27,7 +27,10 @@
   </node>
 
   <!-- Node exposing service to start looking for the object and trigger the picking -->
-  <node name="pick_client" pkg="tiago_pick_demo" type="pick_client.py" output="screen"/>  
+  <node name="pick_client" pkg="navigation_goal" type="pick_client.py" output="screen"/>  
+
+  <!-- Node for picking and placing block after Aruco has grabbed the block -->
+  <node name="pickup_block" pkg="navigation_goal" type="pickup_block.py" output="screen" />
 
   <group if="$(arg rviz)">
       <node name="pick_demo_rviz" pkg="rviz" type="rviz" args="-d $(find tiago_pick_demo)/config/rviz/tiago_pick_demo.rviz" />

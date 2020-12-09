@@ -181,6 +181,7 @@ class PickAndPlaceServer(object):
 		self.scene.remove_attached_object("arm_tool_link")
 		self.scene.remove_world_object("part")
 		self.scene.remove_world_object("table")
+		self.scene.remove_world_object("part_handle")
 		rospy.loginfo("Clearing octomap")
 		self.clear_octomap_srv.call(EmptyRequest())
 		rospy.sleep(2.0)  # Removing is fast
@@ -188,8 +189,13 @@ class PickAndPlaceServer(object):
 
 		rospy.loginfo("Object pose: %s", object_pose.pose)
 		
-                #Add object description in scene
+		#Add object description in scene
 		self.scene.add_box("part", object_pose, (self.object_depth, self.object_width, self.object_height))
+
+		# Add the handle
+		object_handle_pose = copy.deepcopy(object_pose)
+		object_handle_pose.pose.position.z += 0.1
+		self.scene.add_box("part_handle", object_handle_pose, (0.1, 0.1, 0.02))
 
 		rospy.loginfo("Second%s", object_pose.pose)
 		table_pose = copy.deepcopy(object_pose)

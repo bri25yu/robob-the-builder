@@ -158,8 +158,8 @@ class WorldSimulation:
 
     def initialize_block_inertia(self):
         x, y, z = self.block_size
-        ixx = (1.0 / 12) * self.block_mass * (y*y + z*z)
-        iyy = (1.0 / 12) * self.block_mass * (x*x + z*z)
+        ixx = (4.0 / 2) * self.block_mass * (y*y + z*z)
+        iyy = (4.0 / 2) * self.block_mass * (x*x + z*z)
         izz = (1.0 / 12) * self.block_mass * (x*x + y*y)
         self.block_inertia = (ixx, iyy, izz)
 

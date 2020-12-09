@@ -37,6 +37,8 @@ from std_srvs.srv import Empty
 import cv2
 from cv_bridge import CvBridge
 
+import rosservice
+
 from moveit_msgs.msg import MoveItErrorCodes
 moveit_error_dict = {}
 for name in MoveItErrorCodes.__dict__.keys():
@@ -49,8 +51,8 @@ class SphericalService(object):
 		rospy.loginfo("Starting Spherical Grab Service")
 		self.pick_type = PickAruco()
 		rospy.loginfo("Finished SphericalService constructor")
-                self.place_gui = rospy.Service("/place_gui", Empty, self.start_aruco_place)
-                self.pick_gui = rospy.Service("/pick_gui", Empty, self.start_aruco_pick)
+		self.place_gui = rospy.Service("/place_gui", Empty, self.start_aruco_place)
+		self.pick_gui = rospy.Service("/pick_gui", Empty, self.start_aruco_pick)
 
 	def start_aruco_pick(self, req):
 		self.pick_type.pick_aruco("pick")
@@ -95,15 +97,27 @@ class PickAruco(object):
 			exit()
 		rospy.loginfo("Connected!")
 		rospy.sleep(1.0)
+
+		# Lower the head first so we can see the block before lmao
+		self.lower_head()
 		rospy.loginfo("Done initializing PickAruco.")
+
+
 
    	def strip_leading_slash(self, s):
 		return s[1:] if s.startswith("/") else s
 		
 	def pick_aruco(self, string_operation):
-		self.prepare_robot()
+		# self.prepare_robot()
+		rospy.wait_for_service('/ng_prepare')
+		try:
+			rospy.loginfo("Preparing robot...")
+			ng_prepare_service = rospy.ServiceProxy("/ng_prepare", Empty)
+			ng_prepare_service()
+		except rospy.ServiceException as e:
+			print("Service call to prepare failed: %s" %e)
 
-		rospy.sleep(2.0)
+		rospy.sleep(17.0)
 		rospy.loginfo("spherical_grasp_gui: Waiting for an aruco detection")
 
 		aruco_pose = rospy.wait_for_message('/aruco_single/pose', PoseStamped)
@@ -135,11 +149,11 @@ class PickAruco(object):
 
 		if string_operation == "pick":
 
-                        rospy.loginfo("Setting cube pose based on ArUco detection")
+			rospy.loginfo("Setting cube pose based on ArUco detection")
 			pick_g.object_pose.pose.position = aruco_ps.pose.position
-                        pick_g.object_pose.pose.position.z -= 0.4*(1.0/2.0)
+			pick_g.object_pose.pose.position.z -= 0.3*(1.0/2.0) #previously 0.1*(1/2)
 
-                        rospy.loginfo("aruco pose in base_footprint:" + str(pick_g))
+			rospy.loginfo("aruco pose in base_footprint:" + str(pick_g))
 
 			pick_g.object_pose.header.frame_id = 'base_footprint'
 			pick_g.object_pose.pose.orientation.w = 1.0
@@ -153,43 +167,40 @@ class PickAruco(object):
 				rospy.logerr("Failed to pick, not trying further")
 				return
 
-			# Move torso to its maximum height
-                        self.lift_torso()
+			rospy.sleep(1)
+			rospy.loginfo("Picking object done")
 
-                        # Raise arm
-			rospy.loginfo("Moving arm to a safe pose")
-			pmg = PlayMotionGoal()
-                        pmg.motion_name = 'pick_final_pose'
-			pmg.skip_planning = False
-			self.play_m_as.send_goal_and_wait(pmg)
-			rospy.loginfo("Raise object done.")
+			rospy.loginfo("Preparing to lift object using Navigation Goal")
 
-                        # Place the object back to its position
-			rospy.loginfo("Gonna place near where it was")
-			pick_g.object_pose.pose.position.z += 0.05
-			self.place_as.send_goal_and_wait(pick_g)
-			rospy.loginfo("Done!")
+			rospy.wait_for_service('/ng_pickup')
+			try:
+				rospy.loginfo("Grasping and Lifting block...")
+				ng_pickup_service = rospy.ServiceProxy("/ng_pickup", Empty)
+				ng_pickup_service()
+			except rospy.ServiceException as e:
+				print("Service call to prepare failed: %s" %e)
 
-        def lift_torso(self):
+
+	def lift_torso(self):
 		rospy.loginfo("Moving torso up")
 		jt = JointTrajectory()
 		jt.joint_names = ['torso_lift_joint']
 		jtp = JointTrajectoryPoint()
-		jtp.positions = [0.34]
+		jtp.positions = [0.6]
 		jtp.time_from_start = rospy.Duration(2.5)
 		jt.points.append(jtp)
 		self.torso_cmd.publish(jt)
 
-        def lower_head(self):
+	def lower_head(self):
 		rospy.loginfo("Moving head down")
 		jt = JointTrajectory()
 		jt.joint_names = ['head_1_joint', 'head_2_joint']
 		jtp = JointTrajectoryPoint()
-		jtp.positions = [0.0, -1]
+		jtp.positions = [0.0, -0.75]
 		jtp.time_from_start = rospy.Duration(2.0)
 		jt.points.append(jtp)
 		self.head_cmd.publish(jt)
-                rospy.loginfo("Done.")
+		rospy.loginfo("Done.")
 
 	def prepare_robot(self):
 		rospy.loginfo("Unfold arm safely")
@@ -199,7 +210,7 @@ class PickAruco(object):
 		self.play_m_as.send_goal_and_wait(pmg)
 		rospy.loginfo("Done.")
 
-                self.lower_head()
+		self.lower_head()
 
 		rospy.loginfo("Robot prepared.")
 
