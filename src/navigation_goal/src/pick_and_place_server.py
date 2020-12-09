@@ -193,9 +193,9 @@ class PickAndPlaceServer(object):
 		self.scene.add_box("part", object_pose, (self.object_depth, self.object_width, self.object_height))
 
 		# Add the handle
-		object_handle_pose = copy.deepcopy(object_pose)
-		object_handle_pose.pose.position.z += 0.1
-		self.scene.add_box("part_handle", object_handle_pose, (0.1, 0.1, 0.02))
+		# object_handle_pose = copy.deepcopy(object_pose)
+		# object_handle_pose.pose.position.z += 0.2
+		# self.scene.add_box("part_handle", object_handle_pose, (0.1, 0.1, 0.02))
 
 		rospy.loginfo("Second%s", object_pose.pose)
 		table_pose = copy.deepcopy(object_pose)

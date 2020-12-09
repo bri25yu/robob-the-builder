@@ -199,7 +199,8 @@ class Planner():
         return {}
 
     def service_placedown(self, req):
-        self.move_arm_to_pose(x - 0.2, 0, 0.3, np.pi/2, 0, np.pi/2)
+        self.move_arm_to_pose(0.6, 0, 0.3, -np.pi/2, 0, np.pi/2)
+        self.move_arm_to_pose(0.55, 0, 0.2, -np.pi/2, 0, np.pi/2)
         self.move_gripper(1)
         return {}
 

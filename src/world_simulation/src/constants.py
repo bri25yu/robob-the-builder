@@ -28,8 +28,8 @@ class Block:
 
     class ColorGeometry:
         INITIAL = "{COLOR_REPLACE_GEOMETRY}"
-        ARUCO = '<mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm.dae" scale="1 1 8"/>'
-        COLORED = '<box size="0.05 0.05 0.40" />'
+        ARUCO = '<mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm.dae" scale="1 1 2"/>'
+        COLORED = '<box size="0.05 0.05 0.1" />'
 
     class ColorMaterial:
         INITIAL = "{COLOR_REPLACE_MATERIAL}"

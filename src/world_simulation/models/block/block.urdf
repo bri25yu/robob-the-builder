@@ -11,13 +11,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        {COLOR_REPLACE_GEOMETRY}
+        <box size="0.03 0.03 0.4" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.05 0.05 0.40" />
+        <box size="0.03 0.03 0.40" />
       </geometry>
       <surface>
         <friction>
@@ -38,7 +38,7 @@
     </collision>
   </link>
 
-  <link name="handholds">
+  <link name="handhold_1">
     <inertial>
       <origin xyz="0.0 0.0 0.0" />
       <mass value=".01" />
@@ -50,13 +50,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.1 0.1 0.02" />
+        {COLOR_REPLACE_GEOMETRY}
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.1 0.1 0.02" />
+        <box size="0.05 0.05 0.1" />
       </geometry>
       <surface>
         <friction>
@@ -77,10 +77,55 @@
     </collision>
   </link>
 
-  <joint name="block_to_handholds" type="fixed">
+  <link name="handhold_2">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" />
+      <mass value=".01" />
+      <!-- (1/12)*mass*(h^2 + d^2)  (1/12)*mass*(w^2 + d^2) (1/12)*mass*(w^2 + h^2) -->
+      <!-- (1/12)*0.5*(0.045^2 + 0.045^2)  (1/12)*0.5*(0.045^2 + 0.045^2) (1/12)*0.5*(0.045^2 + 0.045^2) -->
+      <inertia  ixx="0.000052083" ixy="0.0"  ixz="0.0"  iyy="0.000052083"  iyz="0.0"  izz="0.000052083" />
+
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" />
+      <geometry>
+        {COLOR_REPLACE_GEOMETRY}
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" />
+      <geometry>
+        <box size="0.05 0.05 0.1" />
+      </geometry>
+      <surface>
+        <friction>
+          <ode>
+            <mu>0.75</mu>
+            <mu2>0.75</mu2>
+          </ode>
+        </friction>
+        <contact>
+          <ode>
+            <kp>1000000.0</kp>
+            <kd>1</kd>
+            <min_depth>0.0025</min_depth>
+            <max_vel>1.0</max_vel>
+          </ode>
+        </contact>
+      </surface>
+    </collision>
+  </link>
+
+  <joint name="block_to_handholds_1" type="fixed">
     <parent link="block"/>
-    <child link="handholds"/>
-    <origin xyz="0 0 0.1"/>
+    <child link="handhold_1"/>
+    <origin xyz="0 0 0.15"/>
+  </joint>
+
+  <joint name="block_to_handholds_2" type="fixed">
+    <parent link="block"/>
+    <child link="handhold_2"/>
+    <origin xyz="0 0 -0.15"/>
   </joint>
 
    {COLOR_REPLACE_MATERIAL}
