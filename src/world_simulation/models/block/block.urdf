@@ -88,9 +88,6 @@
     </inertial>
     <visual>
       <origin xyz="0.0 0.0 0.0" />
-      <geometry>
-        {COLOR_REPLACE_GEOMETRY}
-      </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
