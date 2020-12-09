@@ -18,44 +18,44 @@ import moveit_commander
 import constants as const
 from global_constants import constants as gconst, camera
 import utils
+import take_photos
 
 
 def main():
-    world_sim = WorldSimulation(gazebo_only=True)
-    create_exploration_world(world_sim)
-    # create_world_with_structure(world_sim)
+    # world_sim = WorldSimulation(gazebo_only=True, structure = False)
+    # create_exploration_world(world_sim)
+    world_sim = WorldSimulation(gazebo_only=True, structure = True)
+    create_world_with_structure(world_sim)
 
 
 def create_exploration_world(world_sim):
     for pos in gconst.EXPLORATION_BLOCKS:
-        world_sim.add_block(Pose(position=Point(*pos)), colored = False)
+        world_sim.add_block(Pose(position=Point(*pos)))
 
 
 def create_world_with_structure(world_sim):
+    for cam in camera.CAMERAS.items():
+        world_sim.add_camera(*cam)
     for square in gconst.STRUCTURE_TO_BUILD:
         square = list(square)
         square[-1] *= world_sim.block_size[2]
         world_sim.add_square_2d(*square)
-
-    for cam in camera.CAMERAS.items():
-        world_sim.add_camera(*cam)
-
+    take_photos.main()
 
 class WorldSimulation:
     PACK_NAME = "world_simulation"
     MODEL_DIR = "/models/"
 
-    def __init__(self, gazebo_only=False):
+    def __init__(self, gazebo_only=False, structure = False):
         self.gazebo_only = gazebo_only
         moveit_commander.roscpp_initialize(sys.argv)
         self.moveit_scene = moveit_commander.PlanningSceneInterface()
-        #TODO: later, once we add gmapping, we should be able to set both reference frames to map
         self.gazebo_reference_frame = "world"
         if not self.gazebo_only:
             self.robot = moveit_commander.RobotCommander()
             self.rviz_reference_frame = self.robot.get_planning_frame()
         self.num_blocks = 0
-        self.initialize_block_xml()
+        self.initialize_block_xml(structure = structure)
         self.initialize_camera_xml()
         self.initialize_add_block()
 
@@ -98,7 +98,7 @@ class WorldSimulation:
         camera_xml = self.camera_xml.replace(const.CAMERA_DEFAULT_NAME, name)
         utils.add_block_gazebo(const.Gazebo.SPAWN_SDF_MODEL, camera_xml, pose, self.gazebo_reference_frame, name)
 
-    def add_block(self, pose, color=None, colored = True):
+    def add_block(self, pose, color=None):
         """
         Adds a block to both Gazebo and RViz at pose based on the block_reference_frame
 
@@ -111,7 +111,7 @@ class WorldSimulation:
 
         """
         name = "block{0}".format(self.num_blocks)
-        self.add_block_gazebo(pose, self.gazebo_reference_frame, name, color=color, colored = colored)
+        self.add_block_gazebo(pose, self.gazebo_reference_frame, name, color=color)
         if not self.gazebo_only:
             size = self.block_size
             self.add_block_rviz(pose, self.rviz_reference_frame, name, size)
@@ -134,9 +134,11 @@ class WorldSimulation:
             xml = xml_file.read().replace("\n", "")
         return xml
 
-    def initialize_block_xml(self):
-        self.block_xml = self.initialize_xml(const.BLOCK_URDF_PATH)
-
+    def initialize_block_xml(self, structure = False):
+        if structure:
+            self.block_xml = self.initialize_xml(const.STRUCTURE_BLOCK_URDF_PATH)
+        else:
+            self.block_xml = self.initialize_xml(const.BLOCK_URDF_PATH)
         self.initialize_block_size()
         self.initialize_block_inertia()
 
@@ -158,8 +160,8 @@ class WorldSimulation:
 
     def initialize_block_inertia(self):
         x, y, z = self.block_size
-        ixx = (4.0 / 2) * self.block_mass * (y*y + z*z)
-        iyy = (4.0 / 2) * self.block_mass * (x*x + z*z)
+        ixx = (1.0 / 12) * self.block_mass * (y*y + z*z)
+        iyy = (1.0 / 12) * self.block_mass * (x*x + z*z)
         izz = (1.0 / 12) * self.block_mass * (x*x + y*y)
         self.block_inertia = (ixx, iyy, izz)
 
@@ -169,16 +171,10 @@ class WorldSimulation:
     def initialize_add_block(self):
         self.colors = cycle(const.Colors)
 
-    def add_block_gazebo(self, pose, reference_frame, name, color=None, colored = True):
+    def add_block_gazebo(self, pose, reference_frame, name, color=None):
         colored_xml = self.block_xml
-        if colored:
-            colored_xml = colored_xml.replace(const.Block.ColorGeometry.INITIAL, const.Block.ColorGeometry.COLORED)
-            colored_xml = colored_xml.replace(const.Block.ColorMaterial.INITIAL, const.Block.ColorMaterial.COLORED)
-            if color is not None:
-                colored_xml = colored_xml.replace(const.Block.Color.DEFAULT, const.Block.Color.TEMPLATE.format(color))
-        else:
-            colored_xml = colored_xml.replace(const.Block.ColorGeometry.INITIAL, const.Block.ColorGeometry.ARUCO)
-            colored_xml = colored_xml.replace(const.Block.ColorMaterial.INITIAL, const.Block.ColorMaterial.ARUCO)
+        if color is not None:
+            colored_xml = colored_xml.replace(const.Block.Color.DEFAULT, const.Block.Color.TEMPLATE.format(color))
         utils.add_block_gazebo(const.Gazebo.SPAWN_URDF_MODEL, colored_xml, pose, reference_frame, name)
 
     def add_block_rviz(self, pose, reference_frame, name, size):

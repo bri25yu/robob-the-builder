@@ -50,7 +50,7 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        {COLOR_REPLACE_GEOMETRY}
+        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm.dae" scale="1 1 2"/>
       </geometry>
     </visual>
     <collision>
@@ -127,6 +127,4 @@
     <child link="handhold_2"/>
     <origin xyz="0 0 -0.15"/>
   </joint>
-
-   {COLOR_REPLACE_MATERIAL}
 </robot>

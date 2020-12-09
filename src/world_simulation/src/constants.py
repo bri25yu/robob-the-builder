@@ -26,20 +26,6 @@ class Block:
         DEFAULT = "<material>Gazebo/Red</material>"
         TEMPLATE = "<material>Gazebo/{}</material>"
 
-    class ColorGeometry:
-        INITIAL = "{COLOR_REPLACE_GEOMETRY}"
-        ARUCO = '<mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm.dae" scale="1 1 2"/>'
-        COLORED = '<box size="0.05 0.05 0.1" />'
-
-    class ColorMaterial:
-        INITIAL = "{COLOR_REPLACE_MATERIAL}"
-        ARUCO = ""
-        COLORED = '<gazebo reference="block">' +\
-        "<material>Gazebo/Red</material>" +\
-        "<mu1>0.75</mu1>" +\
-        "<mu2>0.75</mu2>" +\
-      "</gazebo>"
-
     class Size:
         START_FLAG = "<box size="
         END_FLAG = "/>"
@@ -61,4 +47,5 @@ CAMERA_DEFAULT_NAME = "{INPUT_CAMERA_NAME}"
 
 
 BLOCK_URDF_PATH = "block/block.urdf"
+STRUCTURE_BLOCK_URDF_PATH = "block/structure_block.urdf"
 CAMERA_SDF_PATH = "kinect/model.sdf"

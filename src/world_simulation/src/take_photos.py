@@ -27,7 +27,7 @@ def main():
 def saveImage(topic, filename):
     imageData = rospy.wait_for_message(topic, Image)
     image = bridge.imgmsg_to_cv2(imageData, desired_encoding='passthrough')
-    gutils.save_image(image, filename)
+    cv.imwrite(filename, image)
     print("Saved image from {} to {}".format(topic, filename))
 
 
