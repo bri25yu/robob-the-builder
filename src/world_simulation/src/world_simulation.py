@@ -22,10 +22,10 @@ import take_photos
 
 
 def main():
-    # world_sim = WorldSimulation(gazebo_only=True, structure = False)
-    # create_exploration_world(world_sim)
-    world_sim = WorldSimulation(gazebo_only=True, structure = True)
-    create_world_with_structure(world_sim)
+    world_sim = WorldSimulation(gazebo_only=True, structure = False)
+    create_exploration_world(world_sim)
+    # world_sim = WorldSimulation(gazebo_only=True, structure = True)
+    # create_world_with_structure(world_sim)
 
 
 def create_exploration_world(world_sim):

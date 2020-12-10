@@ -11,9 +11,9 @@ import actionlib
 
 from std_srvs.srv import Empty
 
-
+from std_msgs.msg import Float64
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from navigation_goal.srv import NavGoal
+from navigation_goal.srv import NavGoal, GoalDirection
 from geometry_msgs.msg import Twist
 
 NUM_SECONDS_TO_ROTATE = 5
@@ -57,12 +57,11 @@ def get_nav_goals():
     done = False
     while (not done):
         try:
-
             goal_position = det_nav_goal()
             move_to_goal(goal_position.position)
             print("returned from move to goal")
             halt_robot()
-            begin_pickup()
+            begin_pickup(calc_angle(goal_position.position))
             # TODO: pick up block
         except rospy.ServiceException as exc:
             print("Building complete.")
@@ -104,6 +103,24 @@ def do_a_spin():
     # vel_msg.angular.z = 0
     # velocity_publisher.publish(vel_msg)
 
+def calc_angle(goal_position):
+    x, y = goal_position.x, goal_position.y
+
+    # top left (neg, neg)
+    if (x <= 0 and y <= 0):
+        return -1
+    # top right (neg, pos)
+    elif (x <= 0 and y > 0):
+        return 1
+    # bottom right (pos, pos)
+    elif (x > 0 and y > 0):
+        return 1
+    # bottom left (pos, neg)
+    elif (x > 0 and y <= 0):
+        return -1
+
+
+
 def halt_robot():
     velocity_publisher = rospy.Publisher('/mobile_base_controller/cmd_vel', Twist, queue_size=20)
     vel_msg = Twist()
@@ -122,12 +139,14 @@ def prepare_robot():
     except rospy.ServiceException as e:
         print("Service call to prepare failed: %s" %e)
 
-def begin_pickup():
+def begin_pickup(theta):
     rospy.wait_for_service('/ng_init_pickup')
     try:
         rospy.loginfo("Initializing pickup from navigation.py")
-        ng_init_pickup = rospy.ServiceProxy("/ng_init_pickup", Empty)
-        ng_init_pickup()
+        ng_init_pickup = rospy.ServiceProxy("/ng_init_pickup", GoalDirection)
+        float_req = Float64()
+        float_req.data = theta
+        ng_init_pickup(float_req)
     except rospy.ServiceException as e:
         print("Service call to prepare failed: %s" %e)
 

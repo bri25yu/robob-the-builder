@@ -6,7 +6,7 @@ import rospy
 import moveit_commander
 from moveit_msgs.msg import DisplayTrajectory
 from geometry_msgs.msg import PoseStamped, Quaternion, Pose, Twist, Point
-from std_msgs.msg import String, Duration
+from std_msgs.msg import String, Duration, Float64
 from moveit_commander.conversions import pose_to_list
 
 from control_msgs.msg import FollowJointTrajectoryActionGoal, FollowJointTrajectoryGoal
@@ -17,6 +17,7 @@ from tf.transformations import quaternion_from_euler
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 from std_srvs.srv import Empty
+from navigation_goal.srv import GoalDirection
 
 import numpy as np
 import rosservice
@@ -48,7 +49,7 @@ class Planner():
         self.ng_pickup = rospy.Service("/ng_pickup", Empty, self.service_pickup)
         self.ng_place = rospy.Service("/ng_place", Empty, self.service_placedown)
         self.ng_prepare = rospy.Service("/ng_prepare", Empty, self.service_prepare)
-        self.ng_init_pickup = rospy.Service("/ng_init_pickup", Empty, self.initialize_pickup)
+        self.ng_init_pickup = rospy.Service("/ng_init_pickup", GoalDirection, self.initialize_pickup)
 
         # Subscribers
 
@@ -224,8 +225,7 @@ class Planner():
 
     
 
-    def wait_for_aruco_detection(self,):
-
+    def wait_for_aruco_detection(self, direction):
         while(True):
             try:
                 rospy.wait_for_message('/aruco_single/pose', PoseStamped, timeout=4)
@@ -234,7 +234,7 @@ class Planner():
                 # turn the robot a little bit
                 r = rospy.Rate(20) # 10hz
                 move = Twist()
-                move.angular.z = np.pi/8
+                move.angular.z = direction.data * np.pi/8
                 for _ in range(20):
                     self.cmd_pub.publish(move)
                     r.sleep()
@@ -246,7 +246,7 @@ class Planner():
             self.remove_obstacle(block[0])
             rospy.sleep(1)
 
-        self.wait_for_aruco_detection()
+        self.wait_for_aruco_detection(req.data)
         rospy.wait_for_service('/pick_gui')
         try:
             rospy.loginfo("Initialize pick service")

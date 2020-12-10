@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   move_base_msgs
   rospy
   geometry_msgs
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -58,6 +59,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   NavGoal.srv
+  GoalDirection.srv
   )
 
 ## Generate actions in the 'action' folder
@@ -72,6 +74,7 @@ generate_messages(
   DEPENDENCIES
   move_base_msgs
   geometry_msgs
+  std_msgs
 )
 
 ################################################
