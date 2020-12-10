@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-  <node pkg="world_simulation" type="world_simulation.py" name="world_simulation" output="screen" />
   <node pkg="navigation_goal" type="navigation.py" name="navigation" output="screen" />
   <node pkg="navigation_goal" type="costmap_clear.py" name="costmap_clear" output="screen" />
   <node pkg="navigation_goal" type="tiago_middleman.py" name="tiago_middleman" output="screen" />

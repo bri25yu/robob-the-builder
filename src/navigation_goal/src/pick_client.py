@@ -196,22 +196,22 @@ class PickAruco(object):
 
 
 
-	def lower_torso(self):
+	def lower_torso(self, position=0.1):
 		rospy.loginfo("Moving torso down")
 		jt = JointTrajectory()
 		jt.joint_names = ['torso_lift_joint']
 		jtp = JointTrajectoryPoint()
-		jtp.positions = [0.1]
+		jtp.positions = [position]
 		jtp.time_from_start = rospy.Duration(2)
 		jt.points.append(jtp)
 		self.torso_cmd.publish(jt)
 
-	def lower_head(self):
+	def lower_head(self, position=-0.75):
 		rospy.loginfo("Moving head down")
 		jt = JointTrajectory()
 		jt.joint_names = ['head_1_joint', 'head_2_joint']
 		jtp = JointTrajectoryPoint()
-		jtp.positions = [0.0, -0.75]
+		jtp.positions = [0.0, position]
 		jtp.time_from_start = rospy.Duration(2.0)
 		jt.points.append(jtp)
 		self.head_cmd.publish(jt)

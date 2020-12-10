@@ -38,6 +38,7 @@ class Planner():
         group_name = "arm_torso"
         self.group = moveit_commander.MoveGroupCommander(group_name)
         self.group.set_planner_id("SBLkConfigDefault")
+        self.group.set_max_velocity_scaling_factor(0.2)
 
         ## Publishers
         self.gripper_pub = rospy.Publisher('gripper_controller/command', JointTrajectory, queue_size=10)
@@ -46,6 +47,7 @@ class Planner():
         self.torso_pub = rospy.Publisher('torso_controller/command', JointTrajectory, queue_size=10)
         self.arm_pub = rospy.Publisher('arm_controller/command', JointTrajectory, queue_size=10)
         self.cmd_pub = rospy.Publisher('mobile_base_controller/cmd_vel', Twist, queue_size=10)
+        self.head_pub = rospy.Publisher('/head_controller/command', JointTrajectory, queue_size=10)
 
         self._initialize_frames()
 
@@ -67,8 +69,14 @@ class Planner():
         self.tfBuffer = tf2_ros.Buffer()
         self.tf_l = tf2_ros.TransformListener(self.tfBuffer)
 
+        # self.move_gripper(1)
+        # self.move_arm_to_pose(0.55, 0, 0.2, -np.pi/2, 0, np.pi /2 )
+        # self.move_arm_to_pose(0.6, 0, 0.3, -np.pi/2, 0, np.pi/2)
+        # self.move_arm_to_pose(0.74, -0.033, 0.3, -np.pi/2, 0, np.pi/2, planning_time=10)
+        # self.move_arm_to_pose(0.6, -0.033, 0.2, -np.pi/2, 0, np.pi/2, planning_time=10)
 
         # move_to_goal(Point(2.5, 9.6, 0))
+        
         # self.move_arm_to_pose(0.5, -0.5, 1, -np.pi/2, 0, 0)
 
 
@@ -102,7 +110,7 @@ class Planner():
         self.group.stop()
         
 
-    def move_arm_to_pose(self, x, y, z, roll, pitch, yaw):
+    def move_arm_to_pose(self, x, y, z, roll, pitch, yaw, planning_time=5):
         rospy.sleep(2)
         self.group.set_start_state_to_current_state()
 
@@ -115,10 +123,10 @@ class Planner():
 
         print("Attempting to move to ", x, y, z, roll, pitch, yaw)
 
-        self.group.set_planning_time(5.0)
+        self.group.set_planning_time(planning_time)
         
         self.group.set_pose_target(pose_goal)
-        self.group.set_goal_position_tolerance(0.01)
+        self.group.set_goal_position_tolerance(0.001)
 
         self.group.go(wait=True)
         self.group.stop()
@@ -172,7 +180,7 @@ class Planner():
         gripper_traj.joint_names.extend(["gripper_left_finger_joint", "gripper_right_finger_joint"])
 
         duration = rospy.rostime.Duration()
-        duration.secs = 5
+        duration.secs = 1
 
         gripper_traj_point = JointTrajectoryPoint()
         gripper_traj_point.positions = [theta, theta]
@@ -186,6 +194,17 @@ class Planner():
         self.gripper_pub.publish(gripper_traj)
         # self.gripper_pub.publish(self.gripper_goal)
         # self.gripper_pub.publish()
+
+    def move_head(self, theta=-0.75):
+		rospy.loginfo("Moving head down")
+		jt = JointTrajectory()
+		jt.joint_names = ['head_1_joint', 'head_2_joint']
+		jtp = JointTrajectoryPoint()
+		jtp.positions = [0.0, theta]
+		jtp.time_from_start = rospy.Duration(2.0)
+		jt.points.append(jtp)
+		self.head_pub.publish(jt)
+		rospy.loginfo("Done.")
 
     def move_torso(self, theta):
         rospy.sleep(2)
@@ -273,8 +292,8 @@ class Planner():
         r = rospy.Rate(20) # 10hz
 
         move = Twist()
-        move.angular.z = -1
-        for _ in range(25):
+        move.angular.z = -0.5
+        for _ in range(50):
             self.cmd_pub.publish(move)
             r.sleep()
 
@@ -288,34 +307,42 @@ class Planner():
     def service_pickup(self, req):
         self.move_gripper(0)
         self.move_torso(1)
-        self.move_arm_to_pose(0.5, 0, 0.8, -np.pi/2, 0, np.pi/2)
+        self.move_arm_to_pose(0.5, -0.5, 0.7, -np.pi/2, 0, 0, planning_time=10)
         return {}
 
     def service_placedown(self, req):
         next_corner = next(self.corners_iter)
+        if (abs(next_corner[1]) == 0.05):
+            next_corner[1] = (next_corner[1] / 0.05) * 0.09
+        next_corner[1] += 10
         
-
         print("Moving to NEW GOAL: ", next_corner)
-        # world_simulation.worldsim_add_placeholder(Point(*list(next_corner)))
+        world_simulation.worldsim_add_placeholder(Point(*list(next_corner)))
 
         move_to_goal(Point(0, 5, 0), set_angle=True)
         rospy.sleep(3)
-        move_to_goal(Point(2.5, 9.6, 0))
+        # 2.05 10.05
+        move_to_goal(Point(next_corner[0] + 0.05, next_corner[1]-0.15, 0))
         halt_robot()
-        self.move_arm_to_pose(0.5, -0.5, 1, -np.pi/2, 0, 0)
+        self.move_arm_to_pose(0.5, -0.5, 1, -np.pi/2, 0, 0, planning_time=10)
+        self.move_head(-1)
 
         # find the signal_aruco/pose and place the block relative to that pose
         signal_pose = rospy.wait_for_message('/signal_aruco/pose', PoseStamped, timeout=20)
+        if signal_pose.header.frame_id[0] == "/": 
+            signal_pose.header.frame_id = signal_pose.header.frame_id[1:]
+
         tf_signal_pose = self.transform_aruco_pose(signal_pose) # aruco marker pose w.r.t. base_footprint frame
-        goal_x = tf_signal_pose.x + next_corner[0] - 2.5
-        goal_y = tf_signal_pose.y + next_corner[1] 
-        goal_z = 0.25
+        goal_x = tf_signal_pose.pose.position.x
+        goal_y = tf_signal_pose.pose.position.y
+        goal_z = 0.35
     
 
         rospy.sleep(3)
         # self.add_cache_obstacles()
 
-        self.move_arm_to_pose(goal_x, goal_y, goal_z, -np.pi/2, 0, np.pi/2)
+        self.move_arm_to_pose(goal_x, goal_y - 0.15, goal_z, -np.pi/2, 0, np.pi/2, planning_time=10)
+        self.move_arm_to_pose(goal_x, goal_y - 0.15, goal_z - 0.15, -np.pi/2, 0, np.pi/2, planning_time=10)
         #self.move_arm_to_pose(0.6, 0, 0.3, -np.pi/2, 0, np.pi/2)
         self.move_gripper(1)
         self.remove_obstacle("part")
@@ -328,6 +355,7 @@ class Planner():
         self.move_torso(0)
 
         self.prepare_robot()
+        self.move_head(-0.75)
         move_to_goal(Point(0, 5, 0), set_angle=True, returning_to_pickup=True)
         rospy.sleep(3)
         move_to_goal(Point(0, 0, 0), set_angle=True, returning_to_pickup=True)

@@ -14,7 +14,7 @@ from std_srvs.srv import Empty
 from std_msgs.msg import Float64
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from navigation_goal.srv import NavGoal, GoalDirection
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Quaternion
 
 from tf.transformations import quaternion_from_euler
 

@@ -1,6 +1,6 @@
 <robot name="block_placeholder">
   <static>1</static>
-  <link name="block_placeholder_0">
+  <!-- <link name="block_placeholder_0">
     <inertial>
       <origin xyz="0.0 0.0 0.0" />
       <mass value="500" />
@@ -9,13 +9,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.005 0.05 0.04" />
+        <box size="0.001 0.05 0.04" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.005 0.05 0.04" />
+        <box size="0.001 0.05 0.04" />
       </geometry>
     </collision>
   </link>
@@ -29,13 +29,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.005 0.05 0.04" />
+        <box size="0.001 0.05 0.04" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.005 0.05 0.04" />
+        <box size="0.001 0.05 0.04" />
       </geometry>
     </collision>
   </link>
@@ -49,13 +49,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.05 0.005 0.04" />
+        <box size="0.05 0.001 0.04" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.05 0.005 0.04" />
+        <box size="0.05 0.001 0.04" />
       </geometry>
     </collision>
   </link>
@@ -69,19 +69,39 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.05 0.005 0.04" />
+        <box size="0.05 0.001 0.04" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.05 0.005 0.04" />
+        <box size="0.05 0.001 0.04" />
+      </geometry>
+    </collision>
+  </link> -->
+
+  <link name="block_placeholder_aruco">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" />
+      <mass value="500" />
+      <inertia  ixx="10" ixy="0.0"  ixz="0.0"  iyy="10"  iyz="0.0"  izz="10" />
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" />
+      <geometry>
+        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_8cm_26.dae" scale="1.125 1.125 .1"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0.0 0.0 0.0" />
+      <geometry>
+        <box size="0.09 0.09 0.005" />
       </geometry>
     </collision>
   </link>
 
 
-  <joint name="0_to_2" type="fixed">
+  <!-- <joint name="0_to_2" type="fixed">
     <parent link="block_placeholder_0"/>
     <child link="block_placeholder_2"/>
     <origin xyz="0.025 0.025 0"/>
@@ -98,5 +118,11 @@
     <child link="block_placeholder_1"/>
     <origin xyz="0.025 0.025 0"/>
   </joint>
+
+  <joint name="marker_to_0" type="fixed">
+    <parent link="block_placeholder_0"/>
+    <child link="block_placeholder_aruco"/>
+    <origin xyz="0.025 0 -0.02"/>
+  </joint> -->
 
 </robot>

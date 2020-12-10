@@ -11,13 +11,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.03 0.03 0.4" />
+        <box size="0.03 0.03 0.3" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.03 0.03 0.40" />
+        <box size="0.03 0.03 0.3" />
       </geometry>
       <surface>
         <friction>
@@ -50,13 +50,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm.dae" scale="1 1 2"/>
+        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm.dae" scale="1.8 1.8 1"/>
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.05 0.05 0.1" />
+        <box size="0.09 0.09 0.05" />
       </geometry>
       <surface>
         <friction>
@@ -89,13 +89,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm.dae" scale=".8 .8 2"/>
+        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm.dae" scale="1.8 1.8 1"/>
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.04 0.04 0.1" />
+        <box size="0.09 0.09 0.05" />
       </geometry>
       <surface>
         <friction>

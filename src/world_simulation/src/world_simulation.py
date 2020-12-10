@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import numpy as np
 
 from itertools import product, cycle
 
@@ -32,11 +33,12 @@ def create_exploration_world(world_sim):
     for pos in gconst.EXPLORATION_BLOCKS:
         world_sim.add_block(Pose(position=Point(*pos)))
 
-    worldsim_add_signal_block(Point(3, 10, 1))
+    # worldsim_add_signal_block(Point(3, 10, 1))
+    # worldsim_add_placeholder(Point(0, 3, 0))
 
 def worldsim_add_placeholder(position):
     world_sim = WorldSimulation(gazebo_only=True, structure = False)
-    position.y += 0.125
+    # position.y += 0.125
     position.x += 0.55
     world_sim.add_placeholder(Pose(position=position))
 
@@ -132,7 +134,7 @@ class WorldSimulation:
         self.num_blocks += 1
 
     def add_placeholder(self, pose):
-        name = "placeholder"
+        name = str(np.random.randint(0, 1000))
         self.add_placeholder_gazebo(pose, self.gazebo_reference_frame, name)
 
     def add_signal_block(self, pose):

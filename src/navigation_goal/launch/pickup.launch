@@ -2,12 +2,14 @@
 <launch>
 
   <arg name="rviz"  default="true"/>
+  <node pkg="world_simulation" type="world_simulation.py" name="world_simulation" output="screen" />
+
   <!-- marker detector -->
   <node pkg="aruco_ros" type="single"  name="aruco_single">
       <remap from="/camera_info"       to="/xtion/rgb/camera_info" />
       <remap from="/image"             to="/xtion/rgb/image_rect_color" />
       <param name="image_is_rectified" value="True"/>
-      <param name="marker_size"        value="0.045"/>
+      <param name="marker_size"        value="0.085"/>
       <param name="marker_id"          value="582"/>
       <param name="reference_frame"    value="/base_footprint"/>   <!-- frame in which the marker pose will be expressed -->
       <param name="camera_frame"       value="xtion_rgb_optical_frame"/>
@@ -19,7 +21,7 @@
       <remap from="/camera_info"       to="/xtion/rgb/camera_info" />
       <remap from="/image"             to="/xtion/rgb/image_rect_color" />
       <param name="image_is_rectified" value="True"/>
-      <param name="marker_size"        value="0.045"/>
+      <param name="marker_size"        value="0.085"/>
       <param name="marker_id"          value="26"/>
       <param name="reference_frame"    value="/base_footprint"/>   <!-- frame in which the marker pose will be expressed -->
       <param name="camera_frame"       value="xtion_rgb_optical_frame"/>
@@ -33,9 +35,9 @@
   <!-- Pick & place server -->
   <node name="pick_and_place_server" pkg="navigation_goal" type="pick_and_place_server.py" output="screen">
       <rosparam command="load" file="$(find tiago_pick_demo)/config/pick_and_place_params.yaml" />
-      <param name="object_width"  value="0.05" />
-      <param name="object_height" value="0.4" />
-      <param name="object_depth"  value="0.05" />
+      <param name="object_width"  value="0.09" />
+      <param name="object_height" value="0.3" />
+      <param name="object_depth"  value="0.09" />
   </node>
 
   <!-- Node exposing service to start looking for the object and trigger the picking -->
