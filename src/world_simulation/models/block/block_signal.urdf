@@ -50,13 +50,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm_26.dae" scale="1 1 2"/>
+        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_8cm_26.dae" scale="2 2 .1"/>
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.05 0.05 0.1" />
+        <box size="0.2 0.2 0.01" />
       </geometry>
       <surface>
         <friction>
@@ -80,7 +80,7 @@
   <link name="handhold_2">
     <inertial>
       <origin xyz="0.0 0.0 0.0" />
-      <mass value=".2" />
+      <mass value="5" />
       <!-- (1/12)*mass*(h^2 + d^2)  (1/12)*mass*(w^2 + d^2) (1/12)*mass*(w^2 + h^2) -->
       <!-- (1/12)*0.5*(0.045^2 + 0.045^2)  (1/12)*0.5*(0.045^2 + 0.045^2) (1/12)*0.5*(0.045^2 + 0.045^2) -->
       <inertia  ixx="0.000052083" ixy="0.0"  ixz="0.0"  iyy="0.000052083"  iyz="0.0"  izz="0.000052083" />
@@ -89,13 +89,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm_26.dae" scale=".8 .8 2"/>
+        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_8cm_26.dae" scale=".8 .8 .1"/>
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.04 0.04 0.1" />
+        <box size="0.08 0.08 0.01" />
       </geometry>
       <surface>
         <friction>
@@ -119,12 +119,12 @@
   <joint name="block_to_handholds_1" type="fixed">
     <parent link="block"/>
     <child link="handhold_1"/>
-    <origin xyz="0 0 0.155"/>
+    <origin xyz="0 0 0.2"/>
   </joint>
 
   <joint name="block_to_handholds_2" type="fixed">
     <parent link="block"/>
     <child link="handhold_2"/>
-    <origin xyz="0 0 -0.15"/>
+    <origin xyz="0 0 -0.2"/>
   </joint>
 </robot>

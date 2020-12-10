@@ -32,7 +32,7 @@ def create_exploration_world(world_sim):
     for pos in gconst.EXPLORATION_BLOCKS:
         world_sim.add_block(Pose(position=Point(*pos)))
 
-    worldsim_add_signal_block(Point(3, 10, 0))
+    worldsim_add_signal_block(Point(3, 10, 1))
 
 def worldsim_add_placeholder(position):
     world_sim = WorldSimulation(gazebo_only=True, structure = False)
