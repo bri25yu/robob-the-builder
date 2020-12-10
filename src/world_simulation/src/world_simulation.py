@@ -32,15 +32,15 @@ def create_exploration_world(world_sim):
     for pos in gconst.EXPLORATION_BLOCKS:
         world_sim.add_block(Pose(position=Point(*pos)))
 
-    world_sim.add_block(Pose(position=Point(2.5, 10, 0)))
-    # world_sim.add_placeholder(Pose(position=Point(-.025, 0, 0)))
-    # world_sim.add_block(Pose(position = Point(-.025,-.025,0)))
-
 def worldsim_add_placeholder(position):
     world_sim = WorldSimulation(gazebo_only=True, structure = False)
     position.y += 0.125
     position.x += 0.55
     world_sim.add_placeholder(Pose(position=position))
+
+def worldsim_add_signal_block(position):
+    world_sim = WorldSimulation(gazebo_only=True, structure = False)
+    world_sim.add_signal_block(Pose(position=position))
 
 def create_world_with_structure(world_sim):
     for cam in camera.CAMERAS.items():
@@ -67,6 +67,7 @@ class WorldSimulation:
         self.initialize_block_xml(structure = structure)
         if structure is False:
             self.initialize_placeholder_xml()
+            self.initialize_signal_block_xml()
         self.initialize_camera_xml()
         self.initialize_add_block()
 
@@ -132,6 +133,10 @@ class WorldSimulation:
         name = "placeholder"
         self.add_placeholder_gazebo(pose, self.gazebo_reference_frame, name)
 
+    def add_signal_block(self, pose):
+        name = "signal_block"
+        self.add_signal_block_gazebo(pose, self.gazebo_reference_frame, name)
+
     def remove_all_blocks(self, total):
         for i in range(total):
             self.remove_block_rviz("block{0}".format(i))
@@ -159,6 +164,9 @@ class WorldSimulation:
 
     def initialize_placeholder_xml(self):
         self.placeholder_xml = self.initialize_xml(const.PLACEHOLDER_URDF_PATH)
+
+    def initialize_signal_block_xml(self):
+        self.signal_block_xml = self.initialize_xml(const.SIGNAL_BLOCK_URDF_PATH)
 
     def initialize_camera_xml(self):
         self.camera_xml = self.initialize_xml(const.CAMERA_SDF_PATH)
@@ -197,6 +205,9 @@ class WorldSimulation:
 
     def add_placeholder_gazebo(self, pose, reference_frame, name):
         utils.add_block_gazebo(const.Gazebo.SPAWN_URDF_MODEL, self.placeholder_xml, pose, reference_frame, name)
+
+    def add_signal_block_gazebo(self, pose, reference_frame, name):
+        utils.add_block_gazebo(const.Gazebo.SPAWN_URDF_MODEL, self.signal_block_xml, pose, reference_frame, name)
 
     def add_block_rviz(self, pose, reference_frame, name, size):
         adjusted_x = pose.position.x + (size[0] / 2)
