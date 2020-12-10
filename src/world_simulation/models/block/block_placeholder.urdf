@@ -9,13 +9,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.005 0.05 0.01" />
+        <box size="0.005 0.05 0.04" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.005 0.05 0.01" />
+        <box size="0.005 0.05 0.04" />
       </geometry>
     </collision>
   </link>
@@ -29,13 +29,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.005 0.05 0.01" />
+        <box size="0.005 0.05 0.04" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.005 0.05 0.01" />
+        <box size="0.005 0.05 0.04" />
       </geometry>
     </collision>
   </link>
@@ -49,13 +49,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.05 0.005 0.01" />
+        <box size="0.05 0.005 0.04" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.05 0.005 0.01" />
+        <box size="0.05 0.005 0.04" />
       </geometry>
     </collision>
   </link>
@@ -69,13 +69,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.05 0.005 0.01" />
+        <box size="0.05 0.005 0.04" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.05 0.005 0.01" />
+        <box size="0.05 0.005 0.04" />
       </geometry>
     </collision>
   </link>
@@ -90,12 +90,6 @@
   <joint name="0_to_3" type="fixed">
     <parent link="block_placeholder_0"/>
     <child link="block_placeholder_3"/>
-    <origin xyz="0.025 -0.025 0"/>
-  </joint>
-
-  <joint name="2_to_1" type="fixed">
-    <parent link="block_placeholder_2"/>
-    <child link="block_placeholder_1"/>
     <origin xyz="0.025 -0.025 0"/>
   </joint>
 

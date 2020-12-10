@@ -48,4 +48,5 @@ CAMERA_DEFAULT_NAME = "{INPUT_CAMERA_NAME}"
 
 BLOCK_URDF_PATH = "block/block.urdf"
 STRUCTURE_BLOCK_URDF_PATH = "block/structure_block.urdf"
+PLACEHOLDER_URDF_PATH = "block/block_placeholder.urdf"
 CAMERA_SDF_PATH = "kinect/model.sdf"

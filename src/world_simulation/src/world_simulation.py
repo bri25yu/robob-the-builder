@@ -29,8 +29,10 @@ def main():
 
 
 def create_exploration_world(world_sim):
-    for pos in gconst.EXPLORATION_BLOCKS:
-        world_sim.add_block(Pose(position=Point(*pos)))
+    # for pos in gconst.EXPLORATION_BLOCKS:
+    #     world_sim.add_block(Pose(position=Point(*pos)))
+    world_sim.add_placeholder(Pose(position=Point(-.025, 0, 0)))
+    world_sim.add_block(Pose(position = Point(-.025,-.025,0)))
 
 
 def create_world_with_structure(world_sim):
@@ -56,6 +58,8 @@ class WorldSimulation:
             self.rviz_reference_frame = self.robot.get_planning_frame()
         self.num_blocks = 0
         self.initialize_block_xml(structure = structure)
+        if structure is False:
+            self.initialize_placeholder_xml()
         self.initialize_camera_xml()
         self.initialize_add_block()
 
@@ -117,6 +121,10 @@ class WorldSimulation:
             self.add_block_rviz(pose, self.rviz_reference_frame, name, size)
         self.num_blocks += 1
 
+    def add_placeholder(self, pose):
+        name = "placeholder"
+        self.add_placeholder_gazebo(pose, self.gazebo_reference_frame, name)
+
     def remove_all_blocks(self, total):
         for i in range(total):
             self.remove_block_rviz("block{0}".format(i))
@@ -141,6 +149,9 @@ class WorldSimulation:
             self.block_xml = self.initialize_xml(const.BLOCK_URDF_PATH)
         self.initialize_block_size()
         self.initialize_block_inertia()
+
+    def initialize_placeholder_xml(self):
+        self.placeholder_xml = self.initialize_xml(const.PLACEHOLDER_URDF_PATH)
 
     def initialize_camera_xml(self):
         self.camera_xml = self.initialize_xml(const.CAMERA_SDF_PATH)
@@ -176,6 +187,9 @@ class WorldSimulation:
         if color is not None:
             colored_xml = colored_xml.replace(const.Block.Color.DEFAULT, const.Block.Color.TEMPLATE.format(color))
         utils.add_block_gazebo(const.Gazebo.SPAWN_URDF_MODEL, colored_xml, pose, reference_frame, name)
+
+    def add_placeholder_gazebo(self, pose, reference_frame, name):
+        utils.add_block_gazebo(const.Gazebo.SPAWN_URDF_MODEL, self.placeholder_xml, pose, reference_frame, name)
 
     def add_block_rviz(self, pose, reference_frame, name, size):
         adjusted_x = pose.position.x + (size[0] / 2)
