@@ -16,6 +16,8 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from navigation_goal.srv import NavGoal, GoalDirection
 from geometry_msgs.msg import Twist
 
+from tf.transformations import quaternion_from_euler
+
 NUM_SECONDS_TO_ROTATE = 5
 
 def move_to_goal(goal_position, set_angle=False, returning_to_pickup=False):
@@ -31,24 +33,19 @@ def move_to_goal(goal_position, set_angle=False, returning_to_pickup=False):
         x, y = goal_position.x, goal_position.y
 
         if returning_to_pickup:
-            goal.target_pose.pose.orientation.w = np.cos(np.pi * 5 / 2)
-            goal.target_pose.pose.orientation.z = np.sin(np.pi * 5 / 2)
+            goal.target_pose.pose.orientation = Quaternion(*quaternion_from_euler(0, 0, np.pi * 3 / 2))
         # top left (neg, neg)
         elif (x <= 0 and y <= 0):
-            goal.target_pose.pose.orientation.w = np.cos(np.pi * 9 / 4)
-            goal.target_pose.pose.orientation.z = np.sin(np.pi * 9 / 4)
+            goal.target_pose.pose.orientation = Quaternion(*quaternion_from_euler(0, 0, np.pi * 5 / 4))
         # top right (neg, pos)
         elif (x <= 0 and y > 0):
-            goal.target_pose.pose.orientation.w = np.cos(np.pi * 7 / 4)
-            goal.target_pose.pose.orientation.z = np.sin(np.pi * 7 / 4)
+            goal.target_pose.pose.orientation = Quaternion(*quaternion_from_euler(0, 0, np.pi * 3 / 4))
         # bottom right (pos, pos)
         elif (x > 0 and y > 0):
-            goal.target_pose.pose.orientation.w = np.cos(np.pi * 5 / 4)
-            goal.target_pose.pose.orientation.z = np.sin(np.pi * 5 / 4)
+            goal.target_pose.pose.orientation = Quaternion(*quaternion_from_euler(0, 0, np.pi * 1 / 4))
         # bottom left (pos, neg)
         elif (x > 0 and y <= 0):
-            goal.target_pose.pose.orientation.w = np.cos(np.pi * 11 / 4)
-            goal.target_pose.pose.orientation.z = np.sin(np.pi * 11 / 4)
+            goal.target_pose.pose.orientation = Quaternion(*quaternion_from_euler(0, 0, np.pi * 7 / 4))
     else:
         goal.target_pose.pose.orientation.w = 1.0
     
