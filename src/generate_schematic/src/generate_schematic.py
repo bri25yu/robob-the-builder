@@ -22,7 +22,8 @@ def main():
     rospy.init_node("schematic_node", anonymous = True)
     #idea: take all points and round coordinates to nearest multiples
     raw_world_coordinates, world_coordinates = get_world_coordinates()
-
+    world_coordinates = np.array([c for c in world_coordinates if c[2] >= 0])
+    print(world_coordinates)
     before_apply_square_world_coordinates = world_coordinates.copy()[world_coordinates[:, 2] >= 0]
 
     #go downward layer by layer, and at each layer remove non-squares and project points to lower layers
@@ -32,6 +33,7 @@ def main():
     layers = gutils.get_layers(world_coordinates)
     filtered_layers = []
     for i in reversed(range(len(layers))):
+        print("i", i)
         cur_layer = apply_square_filter(layers[i])
         if len(cur_layer) != 0:
             filtered_layers.append(cur_layer)
@@ -83,7 +85,7 @@ def get_world_coordinates():
             raw_world_coordinates.append(raw_pair_coordinates)
     world_coordinates = np.vstack(world_coordinates)
     raw_world_coordinates = np.vstack(raw_world_coordinates)
-    
+
     #remove duplicates
     world_coordinates = gutils.unique_rows(world_coordinates)
 
