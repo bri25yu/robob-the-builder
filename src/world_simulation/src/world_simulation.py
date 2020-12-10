@@ -29,11 +29,18 @@ def main():
 
 
 def create_exploration_world(world_sim):
-    # for pos in gconst.EXPLORATION_BLOCKS:
-    #     world_sim.add_block(Pose(position=Point(*pos)))
-    world_sim.add_placeholder(Pose(position=Point(-.025, 0, 0)))
-    world_sim.add_block(Pose(position = Point(-.025,-.025,0)))
+    for pos in gconst.EXPLORATION_BLOCKS:
+        world_sim.add_block(Pose(position=Point(*pos)))
 
+    world_sim.add_block(Pose(position=Point(2.5, 10, 0)))
+    # world_sim.add_placeholder(Pose(position=Point(-.025, 0, 0)))
+    # world_sim.add_block(Pose(position = Point(-.025,-.025,0)))
+
+def worldsim_add_placeholder(position):
+    world_sim = WorldSimulation(gazebo_only=True, structure = False)
+    position.y += 0.125
+    position.x += 0.55
+    world_sim.add_placeholder(Pose(position=position))
 
 def create_world_with_structure(world_sim):
     for cam in camera.CAMERAS.items():

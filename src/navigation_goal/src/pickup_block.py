@@ -2,6 +2,7 @@
 
 import os
 import sys
+sys.path.insert(0, "/home/aatifjiwani/Documents/BerkeleySenior/EECS106A/project_workspaces/robob-the-builder/src/world_simulation/src")
 import rospy
 import moveit_commander
 from moveit_msgs.msg import DisplayTrajectory
@@ -23,7 +24,8 @@ import numpy as np
 import rosservice
 
 from global_constants import utils
-from navigation import move_to_goal
+from navigation import move_to_goal, halt_robot
+import world_simulation #import world_simulation
 
 class Planner():
     def __init__(self,):
@@ -284,16 +286,19 @@ class Planner():
         next_corner[1] += 10
 
         print("Moving to NEW GOAL: ", next_corner)
+        # world_simulation.worldsim_add_placeholder(Point(*list(next_corner)))
 
         move_to_goal(Point(0, 5, 0))
         rospy.sleep(3)
         move_to_goal(Point(*list(next_corner)))
+        halt_robot()
+        self.move_arm_to_pose(0.2, 0, 0.2, -np.pi/2, 0, 0)
 
         rospy.sleep(3)
         self.add_cache_obstacles()
 
+        self.move_arm_to_pose(0.6, 0, 0.35, -np.pi/2, 0, np.pi/2)
         self.move_arm_to_pose(0.6, 0, 0.3, -np.pi/2, 0, np.pi/2)
-        self.move_arm_to_pose(0.55, 0, 0.25, -np.pi/2, 0, np.pi/2)
         self.move_gripper(1)
         self.remove_obstacle("part")
 

@@ -3,7 +3,7 @@
   <link name="block_placeholder_0">
     <inertial>
       <origin xyz="0.0 0.0 0.0" />
-      <mass value=".1" />
+      <mass value="500" />
       <inertia  ixx="0.000052083" ixy="0.0"  ixz="0.0"  iyy="0.000052083"  iyz="0.0"  izz="0.000052083" />
     </inertial>
     <visual>
@@ -23,7 +23,7 @@
   <link name="block_placeholder_1">
     <inertial>
       <origin xyz="0.0 0.0 0.0" />
-      <mass value=".1" />
+      <mass value="500" />
       <inertia  ixx="0.000052083" ixy="0.0"  ixz="0.0"  iyy="0.000052083"  iyz="0.0"  izz="0.000052083" />
     </inertial>
     <visual>
@@ -43,7 +43,7 @@
 <link name="block_placeholder_2">
     <inertial>
       <origin xyz="0.0 0.0 0.0" />
-      <mass value=".1" />
+      <mass value="500" />
       <inertia  ixx="0.000052083" ixy="0.0"  ixz="0.0"  iyy="0.000052083"  iyz="0.0"  izz="0.000052083" />
     </inertial>
     <visual>
@@ -63,7 +63,7 @@
   <link name="block_placeholder_3">
     <inertial>
       <origin xyz="0.0 0.0 0.0" />
-      <mass value=".1" />
+      <mass value="500" />
       <inertia  ixx="0.000052083" ixy="0.0"  ixz="0.0"  iyy="0.000052083"  iyz="0.0"  izz="0.000052083" />
     </inertial>
     <visual>

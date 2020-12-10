@@ -1,9 +1,0 @@
-<launch>
-
-  <node name="middleman" pkg="navigation_goal" type="tiago_middleman.py" output="screen" />
-
-  <node name="det_nav_goal" pkg="navigation_goal" type="determine_navigation_goal.py" output="screen" />
-
-  <node name="navigation" pkg="navigation_goal" type="set_navigation_goal.py" output="screen" />
-
-</launch>

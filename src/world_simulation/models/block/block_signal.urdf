@@ -50,7 +50,7 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm.dae" scale="1 1 2"/>
+        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm_26.dae" scale="1 1 2"/>
       </geometry>
     </visual>
     <collision>
@@ -89,7 +89,7 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm.dae" scale=".8 .8 2"/>
+        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_5cm_26.dae" scale=".8 .8 2"/>
       </geometry>
     </visual>
     <collision>

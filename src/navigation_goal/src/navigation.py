@@ -46,7 +46,6 @@ def move_to_goal(goal_position):
 def get_nav_goals():
     print("Spinning")
     do_a_spin() # allow gmapping to see in all directions
-    do_a_spin()
     print("Finished spinning")
     prepare_robot()
     

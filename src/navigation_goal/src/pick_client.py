@@ -39,6 +39,8 @@ from cv_bridge import CvBridge
 
 import rosservice
 
+from navigation import halt_robot
+
 from moveit_msgs.msg import MoveItErrorCodes
 moveit_error_dict = {}
 for name in MoveItErrorCodes.__dict__.keys():
@@ -125,7 +127,7 @@ class PickAruco(object):
 		aruco_pose = rospy.wait_for_message('/aruco_single/pose', PoseStamped)
 		aruco_pose.header.frame_id = self.strip_leading_slash(aruco_pose.header.frame_id)
 		rospy.loginfo("Got: " + str(aruco_pose))
-
+		halt_robot()
 
 		rospy.loginfo("spherical_grasp_gui: Transforming from frame: " +
 		aruco_pose.header.frame_id + " to 'base_footprint'")
