@@ -103,7 +103,7 @@
   </library_lights>
   <library_images>
     <image id="marker582_small_margin_png" name="marker582_small_margin_png">
-      <init_from>marker26_5cm.jpg</init_from>
+      <init_from>marker26_5cm_margin_1cm.jpg</init_from>
     </image>
   </library_images>
   <library_effects>

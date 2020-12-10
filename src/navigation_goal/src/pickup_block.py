@@ -14,6 +14,8 @@ from control_msgs.msg import FollowJointTrajectoryActionGoal, FollowJointTraject
 from actionlib_msgs.msg import GoalID
 
 from tf.transformations import quaternion_from_euler
+import tf2_ros
+from tf2_geometry_msgs import do_transform_pose
 
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
@@ -61,6 +63,14 @@ class Planner():
 
         self.boxes_picked_up = 0
         self.cache_boxes = []
+
+        self.tfBuffer = tf2_ros.Buffer()
+        self.tf_l = tf2_ros.TransformListener(self.tfBuffer)
+
+
+        # move_to_goal(Point(2.5, 9.6, 0))
+        # self.move_arm_to_pose(0.5, -0.5, 1, -np.pi/2, 0, 0)
+
 
         ## Extra
         # self.gripper_goal = FollowJointTrajectoryActionGoal()
@@ -283,27 +293,35 @@ class Planner():
 
     def service_placedown(self, req):
         next_corner = next(self.corners_iter)
-        next_corner[1] += 10
+        
 
         print("Moving to NEW GOAL: ", next_corner)
         # world_simulation.worldsim_add_placeholder(Point(*list(next_corner)))
 
         move_to_goal(Point(0, 5, 0))
         rospy.sleep(3)
-        move_to_goal(Point(*list(next_corner)))
+        move_to_goal(Point(2.5, 9.6, 0))
         halt_robot()
-        self.move_arm_to_pose(0.2, 0, 0.2, -np.pi/2, 0, 0)
+        self.move_arm_to_pose(0.5, -0.5, 1, -np.pi/2, 0, 0)
+
+        # find the signal_aruco/pose and place the block relative to that pose
+        signal_pose = rospy.wait_for_message('/signal_aruco/pose', PoseStamped, timeout=20)
+        tf_signal_pose = self.transform_aruco_pose(signal_pose) # aruco marker pose w.r.t. base_footprint frame
+        goal_x = tf_signal_pose.x + next_corner[0] - 2.5
+        goal_y = tf_signal_pose.y + next_corner[1] 
+        goal_z = 0.25
+    
 
         rospy.sleep(3)
-        self.add_cache_obstacles()
+        # self.add_cache_obstacles()
 
-        self.move_arm_to_pose(0.6, 0, 0.35, -np.pi/2, 0, np.pi/2)
-        self.move_arm_to_pose(0.6, 0, 0.3, -np.pi/2, 0, np.pi/2)
+        self.move_arm_to_pose(goal_x, goal_y, goal_z, -np.pi/2, 0, np.pi/2)
+        #self.move_arm_to_pose(0.6, 0, 0.3, -np.pi/2, 0, np.pi/2)
         self.move_gripper(1)
         self.remove_obstacle("part")
 
-        self.cache_boxes.append(["box_" + str(self.boxes_picked_up), next_corner[0] + 0.55, next_corner[1] - 0.05,  0.05, 0.43, 0.05])
-        self.add_map_obstacle(*self.cache_boxes[-1])
+        # self.cache_boxes.append(["box_" + str(self.boxes_picked_up), next_corner[0] + 0.55, next_corner[1] - 0.05,  0.05, 0.43, 0.05])
+        # self.add_map_obstacle(*self.cache_boxes[-1])
 
         self.boxes_picked_up += 1
         self.back_robot_out()
@@ -320,6 +338,29 @@ class Planner():
         self.remove_obstacle("box")
         self.prepare_robot()
         return {}
+
+    def transform_aruco_pose(self, aruco_pose):
+        ps = PoseStamped()
+        ps.pose.position = aruco_pose.pose.position
+        ps.header.stamp = self.tfBuffer.get_latest_common_time("base_footprint", aruco_pose.header.frame_id)
+        ps.header.frame_id = aruco_pose.header.frame_id
+        transform_ok = False
+        while not transform_ok:
+            try:
+                transform = self.tfBuffer.lookup_transform("base_footprint", 
+                                       ps.header.frame_id,
+                                       rospy.Time(0))
+                aruco_ps = do_transform_pose(ps, transform)
+                transform_ok = True
+            except tf2_ros.ExtrapolationException as e:
+                rospy.logwarn(
+                    "Exception on transforming point... trying again \n(" +
+                    str(e) + ")")
+                rospy.sleep(0.01)
+                ps.header.stamp = self.tfBuffer.get_latest_common_time("base_footprint", aruco_pose.header.frame_id)
+
+        return aruco_ps
+
 
     
 
