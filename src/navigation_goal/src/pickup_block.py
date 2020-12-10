@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import rospy
 import moveit_commander
 from moveit_msgs.msg import DisplayTrajectory
-from geometry_msgs.msg import PoseStamped, Quaternion, Pose
+from geometry_msgs.msg import PoseStamped, Quaternion, Pose, Twist, Point
 from std_msgs.msg import String, Duration
 from moveit_commander.conversions import pose_to_list
 
@@ -19,6 +20,9 @@ from std_srvs.srv import Empty
 
 import numpy as np
 import rosservice
+
+from global_constants import utils
+from navigation import move_to_goal
 
 class Planner():
     def __init__(self,):
@@ -36,6 +40,7 @@ class Planner():
         # self.gripper_stop_pub = rospy.Publisher('gripper_controller/follow_joint_trajectory/cancel', GoalID, queue_size=10)
         self.torso_pub = rospy.Publisher('torso_controller/command', JointTrajectory, queue_size=10)
         self.arm_pub = rospy.Publisher('arm_controller/command', JointTrajectory, queue_size=10)
+        self.cmd_pub = rospy.Publisher('mobile_base_controller/cmd_vel', Twist, queue_size=10)
 
         self._initialize_frames()
 
@@ -43,6 +48,16 @@ class Planner():
         self.ng_pickup = rospy.Service("/ng_pickup", Empty, self.service_pickup)
         self.ng_place = rospy.Service("/ng_place", Empty, self.service_placedown)
         self.ng_prepare = rospy.Service("/ng_prepare", Empty, self.service_prepare)
+        self.ng_init_pickup = rospy.Service("/ng_init_pickup", Empty, self.initialize_pickup)
+
+        # Subscribers
+
+        self.corners = np.vstack(utils.get_corners("/home/aatifjiwani/Documents/BerkeleySenior/EECS106A/project_workspaces/robob-the-builder/output/schematic.txt"))
+        self.corners_iter = iter(self.corners)
+        print(self.corners)
+
+        self.boxes_picked_up = 0
+        self.cache_boxes = []
 
         ## Extra
         # self.gripper_goal = FollowJointTrajectoryActionGoal()
@@ -60,22 +75,19 @@ class Planner():
         self.joints = self.group.get_joints()[:-1]
         print("Joint names: ", self.joints)
 
-    def move_arm_to_states(self, joint_states = None):
+    def move_arm_to_states(self,):
+        targets = [0.05, 0.20, -1.34, -0.20, 1.94, -1.57, 1.37, 0.0]
+        print("Attempting to move to ", targets)
 
-        if joint_states is None:
-            targets = [0, 2.0, 0.2, -2.1, 2.0, 1.0, -0.8, 0]
-            print("Attempting to move to ", targets)
+        for joint_name, target_state in zip(self.joints, targets):
+            print("Setting {} to {}".format(joint_name, target_state))
+            self.group.set_joint_value_target(joint_name, target_state)
 
-            for joint_name, target_state in zip(self.joints, targets):
-                print("Setting {} to {}".format(joint_name, target_state))
-                self.group.set_joint_value_target(joint_name, target_state)
+        self.group.set_planning_time(5.0)
 
-            self.group.set_planning_time(5.0)
-
-            self.group.go(wait=True)
-            self.group.stop()
-        else:
-            raise NotImplementedError("need to add support for arbitrary joint states")
+        self.group.go(wait=True)
+        self.group.stop()
+        
 
     def move_arm_to_pose(self, x, y, z, roll, pitch, yaw):
         rospy.sleep(2)
@@ -99,20 +111,37 @@ class Planner():
         self.group.stop()
         self.group.clear_pose_targets()
 
-    def add_planning_obstacle(self, name, x, y, z, ox, oy, oz, ow, h, w):
+    def add_planning_obstacle(self, name, x, y, z, h, w):
         rospy.sleep(2)
         box_pose = PoseStamped()
         box_pose.header.frame_id = "base_footprint"
         box_pose.pose.position.x = x
         box_pose.pose.position.y = y
         box_pose.pose.position.z = z
-
-        box_pose.pose.orientation.x = 0
-        box_pose.pose.orientation.y = 0
-        box_pose.pose.orientation.z = 0
         box_pose.pose.orientation.w = 1
 
         self.scene.add_box(name, box_pose, size=(w,w,h))
+
+    def add_map_obstacle(self, name, x, y, z, h, w):
+        
+        rospy.loginfo("Placing map obstacle for placed block")
+        for box in self.cache_boxes:
+            name, x, y, z, h, w = box
+            rospy.sleep(1)
+            box_pose = PoseStamped()
+            box_pose.header.frame_id = "odom"
+            box_pose.pose.position.x = x
+            box_pose.pose.position.y = y
+            box_pose.pose.position.z = z
+            box_pose.pose.orientation.w = 1
+
+            self.scene.add_box(name, box_pose, size=(w,w,h))
+        
+        rospy.loginfo("Placed")
+
+    def add_cache_obstacles(self,):
+        for box in self.cache_boxes:
+            self.add_map_obstacle(*box)
 
     def remove_obstacle(self, name):
         rospy.sleep(2)
@@ -164,7 +193,7 @@ class Planner():
         self.torso_pub.publish(torso_traj)
 
     def prepare_robot(self,):
-        self.move_torso(0.05)
+        self.move_torso(0)
 
         arm_traj = JointTrajectory()
         arm_traj.header.frame_id = "base_footprint"
@@ -193,18 +222,97 @@ class Planner():
 
         self.arm_pub.publish(arm_traj)
 
+    
+
+    def wait_for_aruco_detection(self,):
+
+        while(True):
+            try:
+                rospy.wait_for_message('/aruco_single/pose', PoseStamped, timeout=4)
+                return
+            except:
+                # turn the robot a little bit
+                r = rospy.Rate(20) # 10hz
+                move = Twist()
+                move.angular.z = np.pi/8
+                for _ in range(20):
+                    self.cmd_pub.publish(move)
+                    r.sleep()
+
+
+    def initialize_pickup(self, req):
+        # Rotate the robot until we see a response from aruco_single/pose
+        for block in self.cache_boxes:
+            self.remove_obstacle(block[0])
+            rospy.sleep(1)
+
+        self.wait_for_aruco_detection()
+        rospy.wait_for_service('/pick_gui')
+        try:
+            rospy.loginfo("Initialize pick service")
+            pick_gui = rospy.ServiceProxy("/pick_gui", Empty)
+            pick_gui()
+        except rospy.ServiceException as e:
+            print("Service call to prepare failed: %s" %e)
+
+        return {}
+
+    def back_robot_out(self,):
+        r = rospy.Rate(20) # 10hz
+
+        move = Twist()
+        move.angular.z = -1
+        for _ in range(25):
+            self.cmd_pub.publish(move)
+            r.sleep()
+
+        rospy.sleep(2)
+        move = Twist()
+        move.linear.x = -0.5
+        for _ in range(15):
+            self.cmd_pub.publish(move)
+            r.sleep()
+        
     def service_pickup(self, req):
         self.move_gripper(0)
-        self.move_torso(0.75)
+        self.move_torso(1)
+        self.move_arm_to_pose(0.5, 0, 0.8, -np.pi/2, 0, np.pi/2)
         return {}
 
     def service_placedown(self, req):
+        next_corner = next(self.corners_iter)
+        next_corner[1] += 10
+
+        print("Moving to NEW GOAL: ", next_corner)
+
+        move_to_goal(Point(0, 5, 0))
+        rospy.sleep(3)
+        move_to_goal(Point(*list(next_corner)))
+
+        rospy.sleep(3)
+        self.add_cache_obstacles()
+
         self.move_arm_to_pose(0.6, 0, 0.3, -np.pi/2, 0, np.pi/2)
-        self.move_arm_to_pose(0.55, 0, 0.2, -np.pi/2, 0, np.pi/2)
+        self.move_arm_to_pose(0.55, 0, 0.25, -np.pi/2, 0, np.pi/2)
         self.move_gripper(1)
+        self.remove_obstacle("part")
+
+        self.cache_boxes.append(["box_" + str(self.boxes_picked_up), next_corner[0] + 0.55, next_corner[1] - 0.05,  0.05, 0.43, 0.05])
+        self.add_map_obstacle(*self.cache_boxes[-1])
+
+        self.boxes_picked_up += 1
+        self.back_robot_out()
+        self.move_torso(0)
+
+        self.prepare_robot()
+        move_to_goal(Point(0, 5, 0))
+        rospy.sleep(3)
+        move_to_goal(Point(0, 0, 0))
+
         return {}
 
     def service_prepare(self, req):
+        self.remove_obstacle("box")
         self.prepare_robot()
         return {}
 

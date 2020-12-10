@@ -61,10 +61,10 @@
   <node name="map_server" pkg="map_server" type="map_server" 
     args="$(env HOME)/.pal/tiago_maps/configurations/test_so/map.yaml"/> -->
 
-  <node name="amcl" pkg="amcl" type="amcl">
+  <!-- <node name="amcl" pkg="amcl" type="amcl">
     <param name="use_map_topic" value="true" />
     <remap from="scan" to="scan_raw" />
-  </node>
+  </node> -->
 
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <rosparam file="$(find localize_robot)/parameters/costmap_common_params.yaml" command="load" ns="global_costmap" />

@@ -100,6 +100,8 @@ class PickAruco(object):
 
 		# Lower the head first so we can see the block before lmao
 		self.lower_head()
+		self.lower_torso()
+
 		rospy.loginfo("Done initializing PickAruco.")
 
 
@@ -180,14 +182,25 @@ class PickAruco(object):
 			except rospy.ServiceException as e:
 				print("Service call to prepare failed: %s" %e)
 
+			rospy.sleep(3)
 
-	def lift_torso(self):
-		rospy.loginfo("Moving torso up")
+			rospy.wait_for_service('/ng_place')
+			try:
+				rospy.loginfo("Preparing to move to goal position and place block")
+				ng_place = rospy.ServiceProxy("/ng_place", Empty)
+				ng_place()
+			except rospy.ServiceException as e:
+				print("Service call to prepare failed: %s" %e)
+
+
+
+	def lower_torso(self):
+		rospy.loginfo("Moving torso down")
 		jt = JointTrajectory()
 		jt.joint_names = ['torso_lift_joint']
 		jtp = JointTrajectoryPoint()
-		jtp.positions = [0.6]
-		jtp.time_from_start = rospy.Duration(2.5)
+		jtp.positions = [0.1]
+		jtp.time_from_start = rospy.Duration(2)
 		jt.points.append(jtp)
 		self.torso_cmd.publish(jt)
 

@@ -80,7 +80,7 @@
   <link name="handhold_2">
     <inertial>
       <origin xyz="0.0 0.0 0.0" />
-      <mass value=".01" />
+      <mass value=".1" />
       <!-- (1/12)*mass*(h^2 + d^2)  (1/12)*mass*(w^2 + d^2) (1/12)*mass*(w^2 + h^2) -->
       <!-- (1/12)*0.5*(0.045^2 + 0.045^2)  (1/12)*0.5*(0.045^2 + 0.045^2) (1/12)*0.5*(0.045^2 + 0.045^2) -->
       <inertia  ixx="0.000052083" ixy="0.0"  ixz="0.0"  iyy="0.000052083"  iyz="0.0"  izz="0.000052083" />
@@ -119,7 +119,7 @@
   <joint name="block_to_handholds_1" type="fixed">
     <parent link="block"/>
     <child link="handhold_1"/>
-    <origin xyz="0 0 0.15"/>
+    <origin xyz="0 0 0.155"/>
   </joint>
 
   <joint name="block_to_handholds_2" type="fixed">
