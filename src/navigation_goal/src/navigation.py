@@ -18,7 +18,7 @@ from geometry_msgs.msg import Twist
 
 NUM_SECONDS_TO_ROTATE = 5
 
-def move_to_goal(goal_position):
+def move_to_goal(goal_position, set_angle=False, returning_to_pickup=False):
     print("move_to_goal is called with" + str(goal_position.x) + " " + str(goal_position.y))
     client = actionlib.SimpleActionClient('move_base', MoveBaseAction)
     client.wait_for_server()
@@ -27,7 +27,31 @@ def move_to_goal(goal_position):
     goal.target_pose.header.frame_id = "map"
     goal.target_pose.header.stamp = rospy.Time.now()
     goal.target_pose.pose.position = goal_position
-    goal.target_pose.pose.orientation.w = 1.0
+    if set_angle:
+        x, y = goal_position.x, goal_position.y
+
+        if returning_to_pickup:
+            goal.target_pose.pose.orientation.w = np.cos(np.pi * 3 / 2)
+            goal.target_pose.pose.orientation.z = np.sin(np.pi * 3 / 2)
+        # top left (neg, neg)
+        if (x <= 0 and y <= 0):
+            goal.target_pose.pose.orientation.w = np.cos(np.pi * 5 / 4)
+            goal.target_pose.pose.orientation.z = np.sin(np.pi * 5 / 4)
+        # top right (neg, pos)
+        elif (x <= 0 and y > 0):
+            goal.target_pose.pose.orientation.w = np.cos(np.pi * 3 / 4)
+            goal.target_pose.pose.orientation.z = np.sin(np.pi * 3 / 4)
+        # bottom right (pos, pos)
+        elif (x > 0 and y > 0):
+            goal.target_pose.pose.orientation.w = np.cos(np.pi * 1 / 4)
+            goal.target_pose.pose.orientation.z = np.sin(np.pi * 1 / 4)
+        # bottom left (pos, neg)
+        elif (x > 0 and y <= 0):
+            goal.target_pose.pose.orientation.w = np.cos(np.pi * 7 / 4)
+            goal.target_pose.pose.orientation.z = np.sin(np.pi * 7 / 4)
+            return -1
+    else:
+        goal.target_pose.pose.orientation.w = 1.0
     
     client.send_goal(goal)
     timeout = Duration()
@@ -57,7 +81,7 @@ def get_nav_goals():
     while (not done):
         try:
             goal_position = det_nav_goal()
-            move_to_goal(goal_position.position)
+            move_to_goal(goal_position.position, True)
             print("returned from move to goal")
             halt_robot()
             begin_pickup(calc_angle(goal_position.position))

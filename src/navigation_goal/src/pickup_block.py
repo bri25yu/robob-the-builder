@@ -298,7 +298,7 @@ class Planner():
         print("Moving to NEW GOAL: ", next_corner)
         # world_simulation.worldsim_add_placeholder(Point(*list(next_corner)))
 
-        move_to_goal(Point(0, 5, 0))
+        move_to_goal(Point(0, 5, 0), set_angle=True)
         rospy.sleep(3)
         move_to_goal(Point(2.5, 9.6, 0))
         halt_robot()
@@ -328,9 +328,9 @@ class Planner():
         self.move_torso(0)
 
         self.prepare_robot()
-        move_to_goal(Point(0, 5, 0))
+        move_to_goal(Point(0, 5, 0), set_angle=True, returning_to_pickup=True)
         rospy.sleep(3)
-        move_to_goal(Point(0, 0, 0))
+        move_to_goal(Point(0, 0, 0), set_angle=True, returning_to_pickup=True)
 
         return {}
 
