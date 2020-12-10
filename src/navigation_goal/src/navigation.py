@@ -31,25 +31,24 @@ def move_to_goal(goal_position, set_angle=False, returning_to_pickup=False):
         x, y = goal_position.x, goal_position.y
 
         if returning_to_pickup:
-            goal.target_pose.pose.orientation.w = np.cos(np.pi * 3 / 2)
-            goal.target_pose.pose.orientation.z = np.sin(np.pi * 3 / 2)
+            goal.target_pose.pose.orientation.w = np.cos(np.pi * 5 / 2)
+            goal.target_pose.pose.orientation.z = np.sin(np.pi * 5 / 2)
         # top left (neg, neg)
-        if (x <= 0 and y <= 0):
-            goal.target_pose.pose.orientation.w = np.cos(np.pi * 5 / 4)
-            goal.target_pose.pose.orientation.z = np.sin(np.pi * 5 / 4)
+        elif (x <= 0 and y <= 0):
+            goal.target_pose.pose.orientation.w = np.cos(np.pi * 9 / 4)
+            goal.target_pose.pose.orientation.z = np.sin(np.pi * 9 / 4)
         # top right (neg, pos)
         elif (x <= 0 and y > 0):
-            goal.target_pose.pose.orientation.w = np.cos(np.pi * 3 / 4)
-            goal.target_pose.pose.orientation.z = np.sin(np.pi * 3 / 4)
-        # bottom right (pos, pos)
-        elif (x > 0 and y > 0):
-            goal.target_pose.pose.orientation.w = np.cos(np.pi * 1 / 4)
-            goal.target_pose.pose.orientation.z = np.sin(np.pi * 1 / 4)
-        # bottom left (pos, neg)
-        elif (x > 0 and y <= 0):
             goal.target_pose.pose.orientation.w = np.cos(np.pi * 7 / 4)
             goal.target_pose.pose.orientation.z = np.sin(np.pi * 7 / 4)
-            return -1
+        # bottom right (pos, pos)
+        elif (x > 0 and y > 0):
+            goal.target_pose.pose.orientation.w = np.cos(np.pi * 5 / 4)
+            goal.target_pose.pose.orientation.z = np.sin(np.pi * 5 / 4)
+        # bottom left (pos, neg)
+        elif (x > 0 and y <= 0):
+            goal.target_pose.pose.orientation.w = np.cos(np.pi * 11 / 4)
+            goal.target_pose.pose.orientation.z = np.sin(np.pi * 11 / 4)
     else:
         goal.target_pose.pose.orientation.w = 1.0
     
