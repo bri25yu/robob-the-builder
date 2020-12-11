@@ -6,9 +6,9 @@ import numpy as np
 IMG_DIR = "images"
 
 
-BLOCK_X = 0.05
-BLOCK_Y = 0.05
-BLOCK_Z = .4
+BLOCK_X = 0.09
+BLOCK_Y = 0.09
+BLOCK_Z = .355
 
 x, y = 2, 0
 CAMERA_DATA = [

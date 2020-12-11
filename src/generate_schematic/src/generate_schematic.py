@@ -35,9 +35,10 @@ def main():
     for i in reversed(range(len(layers))):
         print("i", i)
         cur_layer = apply_square_filter(layers[i])
+        print(cur_layer)
         if len(cur_layer) != 0:
             filtered_layers.append(cur_layer)
-        if not np.isclose(layers[i][0][2], 0):
+        if not np.isclose(layers[i][0][2], 0) and len(cur_layer) != 0:
             layers[i-1] = np.vstack((layers[i-1], cur_layer - Z_DIFF_3D))
     world_coordinates = np.vstack(filtered_layers)
     world_coordinates = gutils.unique_rows(world_coordinates)
