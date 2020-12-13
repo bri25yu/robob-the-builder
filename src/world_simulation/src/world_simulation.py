@@ -55,7 +55,8 @@ def create_world_with_structure(world_sim):
     world_sim.add_camera("camera0", Pose(position = Point(0, 0, 0)))
     world_sim.add_camera("camera1", Pose(position = Point(0, 0, 0)))
 
-    for i in range(0, 12):
+    num_cameras = len(camera.CAMERAS)
+    for i in range(0, num_cameras / 2):
         first_camera = "camera{}".format(i * 2)
         second_camera = "camera{}".format(i * 2 + 1)
         utils.move_camera_gazebo("camera0", camera.CAMERAS[first_camera])
