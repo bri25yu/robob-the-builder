@@ -115,6 +115,13 @@ def get_bottom_left_corners(coordinates):
 
 
 def output_corners(layers, filename=const.CORNERS_OUTPUT_FILE):
+    SPACING = 2
+    #only include coordinates with z coordinate 0 and add spacing
+    layers = np.array([c for c in layers if c[2] == 0])
+    x_median = np.median(layers[:, 0])
+    y_median = np.median(layers[:, 1])
+    layers = np.array([[(c[0] - x_median) * SPACING + x_median, (c[1] - y_median) * SPACING + y_median, 0] for c in layers])
+    print(layers)
     with open(filename, "wb") as file:
         pickle.dump(layers, file)
 
@@ -122,4 +129,3 @@ def output_corners(layers, filename=const.CORNERS_OUTPUT_FILE):
 def get_corners(filename=const.CORNERS_OUTPUT_FILE):
     with open(filename, "rb") as file:
         return get_layers(pickle.load(file))
-
