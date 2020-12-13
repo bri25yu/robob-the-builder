@@ -19,14 +19,14 @@ import moveit_commander
 import constants as const
 from global_constants import constants as gconst, camera
 import utils
-import take_photos
+import take_photos as tp
 
 
 def main():
-    world_sim = WorldSimulation(gazebo_only=True, structure = False)
-    create_exploration_world(world_sim)
-    # world_sim = WorldSimulation(gazebo_only=True, structure = True)
-    # create_world_with_structure(world_sim)
+    # world_sim = WorldSimulation(gazebo_only=True, structure = False)
+    # create_exploration_world(world_sim)
+    world_sim = WorldSimulation(gazebo_only=True, structure = True)
+    create_world_with_structure(world_sim)
 
 
 def create_exploration_world(world_sim):
@@ -47,13 +47,32 @@ def worldsim_add_signal_block(position):
     world_sim.add_signal_block(Pose(position=position))
 
 def create_world_with_structure(world_sim):
-    for cam in camera.CAMERAS.items():
-        world_sim.add_camera(*cam)
     for square in gconst.STRUCTURE_TO_BUILD:
         square = list(square)
         square[-1] *= world_sim.block_size[2]
         world_sim.add_square_2d(*square)
-    take_photos.main()
+    #add first two cameras
+    print(camera.CAMERAS)
+    world_sim.add_camera("camera0", camera.CAMERAS["camera0"])
+    world_sim.add_camera("camera1", camera.CAMERAS["camera1"])
+    rospy.sleep(1)
+    tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(0), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(0))
+    tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(1), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(1))
+
+    for i in range(1, 12):
+        first_camera = "camera{}".format(i * 2)
+        second_camera = "camera{}".format(i * 2 + 1)
+        utils.move_camera_gazebo("camera0", camera.CAMERAS[first_camera])
+        utils.move_camera_gazebo("camera1", camera.CAMERAS[second_camera])
+        rospy.sleep(0.1)
+        tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(0), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(2 * i))
+        tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(1), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(2 * i + 1))
+
+    # for cam in camera.CAMERAS.items():
+    #     print(cam)
+    #     world_sim.add_camera(*cam)
+
+    # take_photos.main()
 
 class WorldSimulation:
     PACK_NAME = "world_simulation"
