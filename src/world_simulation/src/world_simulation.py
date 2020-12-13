@@ -52,21 +52,21 @@ def create_world_with_structure(world_sim):
         square[-1] *= world_sim.block_size[2]
         world_sim.add_square_2d(*square)
     #add first two cameras
-    print(camera.CAMERAS)
-    world_sim.add_camera("camera0", camera.CAMERAS["camera0"])
-    world_sim.add_camera("camera1", camera.CAMERAS["camera1"])
-    rospy.sleep(1)
-    tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(0), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(0))
-    tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(1), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(1))
+    world_sim.add_camera("camera0", Pose(position = Point(0, 0, 0)))
+    world_sim.add_camera("camera1", Pose(position = Point(0, 0, 0)))
 
-    for i in range(1, 12):
+    for i in range(0, 12):
         first_camera = "camera{}".format(i * 2)
         second_camera = "camera{}".format(i * 2 + 1)
         utils.move_camera_gazebo("camera0", camera.CAMERAS[first_camera])
         utils.move_camera_gazebo("camera1", camera.CAMERAS[second_camera])
-        rospy.sleep(0.1)
+        rospy.sleep(.2)
+        # rospy.sleep(0.1)
         tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(0), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(2 * i))
         tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(1), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(2 * i + 1))
+        if i == 0:
+            tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(0), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(2 * i))
+
 
     # for cam in camera.CAMERAS.items():
     #     print(cam)

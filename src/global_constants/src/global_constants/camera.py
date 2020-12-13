@@ -55,7 +55,7 @@ class CameraDTO:
             self.get_raw_image()
 
     def get_intrinsic_matrix(self):
-        camera_info = rospy.wait_for_message(CameraDTO.TOPIC_TEMPLATE.format(self.index), CameraInfo)
+        camera_info = rospy.wait_for_message(CameraDTO.TOPIC_TEMPLATE.format(self.index % 2), CameraInfo)
         self.intrinsic_matrix = np.reshape(camera_info.K, (3, 3))
 
     def get_raw_image(self):
@@ -107,7 +107,7 @@ class CameraDTO:
         g = tr.quaternion_matrix([orient.x, orient.y, orient.z, orient.w])
         g[0:3, -1] = [pos.x, pos.y, pos.z]
         transformation = np.array([[0, -1, 0, 0],
-                                        [0, 0, -1, 0.036],
+                                        [0, 0, -1, 0],
                                         [1, 0, 0, 0],
                                         [0, 0, 0, 1]])
         return g.dot(np.linalg.inv(transformation))

@@ -75,10 +75,10 @@ def get_world_coordinates():
     raw_world_coordinates = []
     for i in range(len(gconst.CAMERA_DATA) // 2):
         raw_pair_coordinates = get_coordinates_for_pair(2 * i, 2 * i + 1)
-
+        # print("raw coordinates", raw_pair_coordinates)
         potential_grid_indices = gutils.close_to_multiples_of(raw_pair_coordinates, gconst.multiple, gconst.offset, gconst.tolerances)
         new_pair_coordinates = raw_pair_coordinates[potential_grid_indices]
-
+        print("after filtering", new_pair_coordinates)
         new_pair_coordinates = gutils.round_nearest(new_pair_coordinates, gconst.offset, gconst.multiple)
 
         if len(new_pair_coordinates) != 0:
@@ -98,7 +98,6 @@ def get_coordinates_for_pair(n1, n2):
     g03 = CameraDTO.get_g(camera3.pose)
     camera3_coordinates = camera3_coordinates.T
     world_coordinates = ImageMatching.apply_transform(ImageMatching.lift(camera3_coordinates), g03)[:, :3]
-    #remove points with z-coordinate that doesn't make sense
     return world_coordinates
 
 
