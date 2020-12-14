@@ -11,16 +11,7 @@ BLOCK_Y = 0.09
 BLOCK_Z = .355
 
 x, y = 2, 0
-CAMERA_DATA = [
-    # [(x, y, 1), (0, np.pi / 2, 0)],
-    # [(x - 1, y, 0), (0, 0, 0)],
-    # [(x + 1, y, 0), (0, 0, np.pi)],
-    # [(x + 1.01, y, 0.01), (0, 0, np.pi)],
-    # [(2, -.75, .15 - .036), (0, .2, 1.55)],
-    # [(2.01, -.75, .16 - .036), (0, .2, 1.55)],
-
-]
-
+CAMERA_DATA = []
 zs = [0.6, 1.2, 1.8, 2.1]
 delta = .325
 deltas = [(delta, delta, np.pi + np.pi/4), (-delta, delta, 2 * np.pi -np.pi/4), (-delta, -delta, np.pi/4), (delta, -delta, np.pi/2 + np.pi/4)]

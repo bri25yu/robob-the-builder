@@ -51,17 +51,15 @@ def create_world_with_structure(world_sim):
     world_sim.add_camera("camera1", Pose(position = Point(0, 0, 0)))
 
     num_cameras = len(camera.CAMERAS)
-    for i in range(0, num_cameras / 2):
+    for i in range(num_cameras / 2):
         first_camera = "camera{}".format(i * 2)
         second_camera = "camera{}".format(i * 2 + 1)
+
         utils.move_camera_gazebo("camera0", camera.CAMERAS[first_camera])
         utils.move_camera_gazebo("camera1", camera.CAMERAS[second_camera])
-        rospy.sleep(.2)
-        # rospy.sleep(0.1)
+
         tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(0), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(2 * i))
         tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(1), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(2 * i + 1))
-        if i == 0:
-            tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(0), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(2 * i))
 
 
 class WorldSimulation:

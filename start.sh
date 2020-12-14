@@ -16,7 +16,7 @@ source devel/setup.bash
 
 # Start necessary services: roscore and Gazebo
 roscore &
-rosrun gazebo_ros gazebo &
+rosrun gazebo_ros gzserver &
 
 # Create world. Make any world modifications in src/global_constants/src/constants.py
 rosrun world_simulation world_simulation.py

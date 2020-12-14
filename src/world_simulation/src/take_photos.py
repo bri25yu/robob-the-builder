@@ -25,13 +25,11 @@ def main():
 
 
 def saveImage(topic, filename):
-    imageData = rospy.wait_for_message(topic, Image)
-    oldData = imageData
-    while imageData == oldData:
-        print("data is the same as old data!")
+    start_time = rospy.get_time()
+    while True:
         imageData = rospy.wait_for_message(topic, Image)
-        rospy.sleep(0.01)
-
+        if imageData.header.stamp.secs > start_time:
+            break
     image = bridge.imgmsg_to_cv2(imageData, desired_encoding='passthrough')
     cv.imwrite(filename, image)
     print("Saved image from {} to {}".format(topic, filename))
