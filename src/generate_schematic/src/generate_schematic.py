@@ -18,26 +18,53 @@ from global_constants import utils as gutils, constants as gconst
 Z_DIFF_3D = np.array([0, 0, gconst.BLOCK_Z])
 
 def main():
-    gs = GenerateSchematic()
-    gs.process()
-    gs.display()
+    # gs = GenerateSchematic()
+    # gs.process()
+    # gs.display()
+
+    gss = GenerateSchematicStats()
+    gss.num_pairs_of_cameras_test()
 
 
 class GenerateSchematic:
-    def process(self):
-        self.raw_world_coordinates = GenerateSchematic.get_raw_world_coordinates()
+    def __init__(self):
+        self.initialize()
+
+    def initialize(self):
+        self.raw_world_coordinates = None
+        self.processed_world_coordinates = None
+        self.world_coordinates = None
+        self.bottom_left_corners = None
+
+    def process(self, camera_pair_indices=None, output_corners=True):
+        """
+        Parameters
+        ----------
+        camera_pair_indices: A (c, 2)-shaped np.ndarray
+
+        """
+        if camera_pair_indices is None:
+            camera_pair_indices = GenerateSchematic.generate_all_camera_pair_indices()
+
+        self.raw_world_coordinates = GenerateSchematic.get_raw_world_coordinates(camera_pair_indices)
+        if self.raw_world_coordinates is None: return
+
         self.processed_world_coordinates = GenerateSchematic.process_raw_world_coordinates(self.raw_world_coordinates)
+        if self.processed_world_coordinates is None: return
+
         self.world_coordinates = GenerateSchematic.push_down(self.processed_world_coordinates)
-        self.bottom_left_corners = GenerateSchematic.output_bottom_left_corners(self.world_coordinates)
+        if self.world_coordinates is None: return
+
+        self.bottom_left_corners = GenerateSchematic.output_bottom_left_corners(self.world_coordinates, output_corners=output_corners)
 
     @staticmethod
-    def get_raw_world_coordinates():
+    def get_raw_world_coordinates(camera_pair_indices):
         """
         Assumption 1: blocks are rectangular prisms
         """
         raw_world_coordinates = []
-        for i in range(len(gconst.CAMERA_DATA) // 2):
-            raw_pair_coordinates = GenerateSchematic.get_raw_world_coordinates_for_pair(2 * i, 2 * i + 1)
+        for i1, i2 in camera_pair_indices:
+            raw_pair_coordinates = GenerateSchematic.get_raw_world_coordinates_for_pair(i1, i2)
             if len(raw_pair_coordinates) > 0:
                 raw_world_coordinates.append(raw_pair_coordinates)
 
@@ -94,13 +121,15 @@ class GenerateSchematic:
                 if i > 0:
                     layers[i-1] = np.vstack((layers[i-1], cur_layer - Z_DIFF_3D))
 
+        if len(filtered_layers) == 0: return None
+
         world_coordinates = np.vstack(filtered_layers)
         world_coordinates = gutils.unique_rows(world_coordinates)
 
         return world_coordinates
 
     @staticmethod
-    def output_bottom_left_corners(world_coordinates):
+    def output_bottom_left_corners(world_coordinates, output_corners):
         """
         Assumption 1: all the blocks are the same height
         Assumption 2: all the blocks are in a convex 2D rectangle shape
@@ -109,9 +138,12 @@ class GenerateSchematic:
 
         bottom_left_corners = np.vstack(GenerateSchematic.get_bottom_left_corners(layer) for layer in layers_to_output) - Z_DIFF_3D
 
-        gutils.output_corners(bottom_left_corners)
+        if output_corners:
+            gutils.output_corners(bottom_left_corners)
 
-        return gutils.get_corners()
+            return gutils.get_corners()
+        else:
+            return bottom_left_corners
 
     def display(self):
         fig = plt.figure(figsize=plt.figaspect(0.5))
@@ -140,6 +172,11 @@ class GenerateSchematic:
         plt.show()
 
     # Helpers--------------------------------------------------------------------------------------
+
+    @staticmethod
+    def generate_all_camera_pair_indices():
+        n = len(gconst.CAMERA_DATA)
+        return np.reshape(np.arange(n), (n // 2, 2))
 
     @staticmethod
     def get_raw_world_coordinates_for_pair(n1, n2, epipolar_threshold=0.01):
@@ -204,6 +241,50 @@ class GenerateSchematicStats:
 
     def run_test(self):
         pass
+
+    def num_pairs_of_cameras_test(self, num_itrs=5):
+        total_indices = GenerateSchematic.generate_all_camera_pair_indices()
+        num_indices = list(range(len(total_indices)))
+        expected_output = gutils.get_corners()
+
+        num_corners_correct = []
+        num_spurious_corners = []
+        num_pairs_of_cameras = list(range(1, len(total_indices) + 1))
+        for i, s in enumerate(num_pairs_of_cameras):
+            num_corners_correct.append(0.0)
+            num_spurious_corners.append(0.0)
+
+            for _ in range(num_itrs):
+                gs = GenerateSchematic()
+
+                gs.process(total_indices[np.random.choice(num_indices, s, replace=False)], output_corners=False)
+
+                if gs.bottom_left_corners is None:
+                    continue
+
+                for corner in gs.bottom_left_corners:
+                    if corner in expected_output:
+                        num_corners_correct[-1] += 1
+                    else: 
+                        num_spurious_corners[-1] += 1
+
+            num_corners_correct[-1] /= num_itrs * len(expected_output)
+            num_spurious_corners[-1] /= num_itrs * len(expected_output)
+
+            print("Finished {} / {}".format(i + 1, len(num_pairs_of_cameras)))
+        
+        fig, axs = plt.subplots(2)
+        axs[0].plot(num_pairs_of_cameras, num_corners_correct)
+        axs[0].set_xlabel("Number of pairs of cameras")
+        axs[0].set_ylabel("Percent of corners correct")
+        axs[0].set_title("Percent of corners correct vs number of pairs of cameras")
+        axs[1].plot(num_pairs_of_cameras, num_spurious_corners)
+        axs[1].set_xlabel("Number of pairs of cameras")
+        axs[1].set_ylabel("Ratio of spurious matches to number of expected matches")
+        axs[1].set_title("Spurious matches vs number of pairs of cameras")
+
+        plt.savefig("output/num_pairs_of_cameras_test.jpg")
+        plt.show()
 
 
 if __name__ == "__main__":
