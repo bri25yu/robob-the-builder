@@ -13,12 +13,20 @@ BLOCK_Z = .355
 x, y = 2, 0
 CAMERA_DATA = []
 zs = [0.6, 1.2, 1.8, 2.1]
+pitch = 1.15
 delta = .325
+
+# CAMERA_DATA = [[(x, y, 2.5), (0, np.pi / 2, 0)], [(x + 0.01, y - 0.01, 2.5), (0, np.pi / 2, 0)]]
+# zs = [0.355 * 2]
+# pitch = 0
+# delta = 1.2
+
 deltas = [(delta, delta, np.pi + np.pi/4), (-delta, delta, 2 * np.pi -np.pi/4), (-delta, -delta, np.pi/4), (delta, -delta, np.pi/2 + np.pi/4)]
+
 for delta in deltas:
     for z in zs:
-        CAMERA_DATA.append([(x + delta[0], y + delta[1], z), (0 , 1.15, delta[2])])
-        CAMERA_DATA.append([(x + delta[0] + .01, y + delta[1] + .01, z), (0 , 1.15, delta[2])])
+        CAMERA_DATA.append([(x + delta[0], y + delta[1], z), (0 , pitch, delta[2])])
+        CAMERA_DATA.append([(x + delta[0] + .01, y + delta[1] + .01, z), (0 , pitch, delta[2])])
 
 STRUCTURE_TO_BUILD = [  # Passed into WorldSimulation.add_square_2d
     [x + .01, y + .01, 2, 0],

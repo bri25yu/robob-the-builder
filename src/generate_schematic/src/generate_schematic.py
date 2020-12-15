@@ -118,7 +118,7 @@ class GenerateSchematic:
             if len(cur_layer) != 0:
                 cur_layer = np.hstack((cur_layer, np.ones((len(cur_layer), 1)) * layers[i][0][2]))
                 filtered_layers.append(cur_layer)
-                if i > 0:
+                if i > 0 and np.isclose(layers[i][0][2], layers[i-1][0][2] + Z_DIFF_3D[2]):
                     layers[i-1] = np.vstack((layers[i-1], cur_layer - Z_DIFF_3D))
 
         if len(filtered_layers) == 0: return None

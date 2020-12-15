@@ -20,7 +20,6 @@ rosrun gazebo_ros gzserver &
 
 # Create world. Make any world modifications in src/global_constants/src/constants.py
 rosrun world_simulation world_simulation.py
-rosrun world_simulation take_photos.py
 
 # Generate the schematic to build
 rosrun generate_schematic generate_schematic.py
