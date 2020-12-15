@@ -12,12 +12,13 @@ from geometry_msgs.msg import (
     Pose,
     Point,
 )
+from sensor_msgs.msg import CameraInfo
 from std_msgs.msg import Header
 
 import moveit_commander
 
 import constants as const
-from global_constants import constants as gconst, camera
+from global_constants import constants as gconst, camera, utils as gutils
 import utils
 import take_photos as tp
 
@@ -49,6 +50,9 @@ def create_world_with_structure(world_sim):
     #add first two cameras
     world_sim.add_camera("camera0", Pose(position = Point(0, 0, 0)))
     world_sim.add_camera("camera1", Pose(position = Point(0, 0, 0)))
+
+    camera_info = rospy.wait_for_message(camera.CameraDTO.TOPIC_TEMPLATE.format(0), CameraInfo)
+    gutils.output_object(np.reshape(camera_info.K, (3, 3)), gconst.KINECT_INTRINSIC_MATRIX_FILE)
 
     num_cameras = len(camera.CAMERAS)
     for i in range(num_cameras / 2):

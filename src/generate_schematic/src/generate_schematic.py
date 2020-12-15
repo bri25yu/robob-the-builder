@@ -13,117 +13,143 @@ from mpl_toolkits.mplot3d import Axes3D
 from global_constants import utils as gutils, constants as gconst
 
 
-IMAGE_IN_PATH = "images/gazebo_angled_image_one.jpg"
-IMAGE_OUT_NAME = "gazebo_angled_image_one_clustering.jpg"
-
 Z_DIFF_3D = np.array([0, 0, gconst.BLOCK_Z])
 
 def main():
-    rospy.init_node("schematic_node", anonymous = True)
-    #idea: take all points and round coordinates to nearest multiples
-    raw_world_coordinates, world_coordinates = get_world_coordinates()
-    world_coordinates = np.array([c for c in world_coordinates if c[2] >= 0])
-    print(world_coordinates)
-    before_apply_square_world_coordinates = world_coordinates.copy()[world_coordinates[:, 2] >= 0]
-
-    #go downward layer by layer, and at each layer remove non-squares and project points to lower layers
-    max_z_coordinate = max(world_coordinates[:, 2])
-    z = max_z_coordinate
-    z_diff = gconst.BLOCK_Z
-    layers = gutils.get_layers(world_coordinates)
-    filtered_layers = []
-    for i in reversed(range(len(layers))):
-        print("i", i)
-        cur_layer = apply_square_filter(layers[i])
-        print(cur_layer)
-        if len(cur_layer) != 0:
-            filtered_layers.append(cur_layer)
-        if not np.isclose(layers[i][0][2], 0) and len(cur_layer) != 0:
-            layers[i-1] = np.vstack((layers[i-1], cur_layer - Z_DIFF_3D))
-    world_coordinates = np.vstack(filtered_layers)
-    world_coordinates = gutils.unique_rows(world_coordinates)
-
-    #add points from first layer to second layer
-    first_layer = np.array([c for c in world_coordinates if np.isclose(c[2], 0)])
-    new_second_layer_points = first_layer + Z_DIFF_3D
-    world_coordinates = np.vstack((world_coordinates, new_second_layer_points))
-    world_coordinates = gutils.round_nearest(world_coordinates, gconst.offset, gconst.multiple)
-    world_coordinates = gutils.unique_rows(world_coordinates)
-    print("world_coordinates", world_coordinates)
-
-    layers_to_output = gutils.get_layers(world_coordinates)[1:]
-    bottom_left_corners = np.vstack(gutils.get_bottom_left_corners(layer) for layer in layers_to_output) - Z_DIFF_3D
-    print(bottom_left_corners)
-    gutils.output_corners(bottom_left_corners)
-    print("bottom left corners read in", gutils.get_corners())
-
-    fig = plt.figure(figsize=plt.figaspect(0.5))
-    ax1 = fig.add_subplot(2, 2, 1, projection='3d')
-    ax2 = fig.add_subplot(2, 2, 2, projection='3d')
-    ax3 = fig.add_subplot(2, 2, 3, projection='3d')
-    ax4 = fig.add_subplot(2, 2, 4, projection='3d')
-    ImageMatching.scatter3d(raw_world_coordinates, ax1, title="Raw world coordinates")
-    ImageMatching.scatter3d(before_apply_square_world_coordinates, ax2, title="World coords before filtering")
-    ImageMatching.scatter3d(world_coordinates, ax3, title="World coords after processing")
-    ImageMatching.scatter3d(bottom_left_corners, ax4, title="Bottom left corners sent to robot")
-    plt.savefig("output/world_coordinates.jpg")
-    plt.show()
+    gs = GenerateSchematic()
+    gs.process()
+    gs.display()
 
 
-def get_world_coordinates():
-    world_coordinates = []
-    raw_world_coordinates = []
-    for i in range(len(gconst.CAMERA_DATA) // 2):
-        raw_pair_coordinates = get_coordinates_for_pair(2 * i, 2 * i + 1)
-        # print("raw coordinates", raw_pair_coordinates)
-        potential_grid_indices = gutils.close_to_multiples_of(raw_pair_coordinates, gconst.multiple, gconst.offset, gconst.tolerances)
-        new_pair_coordinates = raw_pair_coordinates[potential_grid_indices]
-        print("after filtering", new_pair_coordinates)
-        new_pair_coordinates = gutils.round_nearest(new_pair_coordinates, gconst.offset, gconst.multiple)
+class GenerateSchematic:
+    def process(self):
+        self.raw_world_coordinates = GenerateSchematic.get_raw_world_coordinates()
+        self.processed_world_coordinates = GenerateSchematic.process_raw_world_coordinates(self.raw_world_coordinates)
+        self.world_coordinates = GenerateSchematic.push_down(self.processed_world_coordinates)
+        self.bottom_left_corners = GenerateSchematic.output_bottom_left_corners(self.world_coordinates)
 
-        if len(new_pair_coordinates) != 0:
-            world_coordinates.append(new_pair_coordinates)
-            raw_world_coordinates.append(raw_pair_coordinates)
-    world_coordinates = np.vstack(world_coordinates)
-    raw_world_coordinates = np.vstack(raw_world_coordinates)
+    @staticmethod
+    def get_raw_world_coordinates():
+        raw_world_coordinates = []
+        for i in range(len(gconst.CAMERA_DATA) // 2):
+            raw_pair_coordinates = GenerateSchematic.get_raw_world_coordinates_for_pair(2 * i, 2 * i + 1)
+            if len(raw_pair_coordinates) > 0:
+                raw_world_coordinates.append(raw_pair_coordinates)
 
-    #remove duplicates
-    world_coordinates = gutils.unique_rows(world_coordinates)
+        raw_world_coordinates = np.vstack(raw_world_coordinates)
 
-    return raw_world_coordinates, world_coordinates
+        return raw_world_coordinates
 
-def get_coordinates_for_pair(n1, n2):
-    camera2, camera3 = CameraDTO(n1), CameraDTO(n2)
-    camera3_coordinates = FeatureDetect.find_all_corners_3d(camera2, camera3, epipolar_threshold=0.01).T
-    g03 = CameraDTO.get_g(camera3.pose)
-    camera3_coordinates = camera3_coordinates.T
-    world_coordinates = ImageMatching.apply_transform(ImageMatching.lift(camera3_coordinates), g03)[:, :3]
-    return world_coordinates
+    @staticmethod
+    def process_raw_world_coordinates(raw_world_coordinates):
+        # We first take only the coordinates that are grid aligned
+        potential_grid_indices = gutils.close_to_multiples_of(raw_world_coordinates, gconst.multiple, gconst.offset, gconst.tolerances)
+        grid_aligned = raw_world_coordinates[potential_grid_indices]
 
+        # Then, we round all of our coordinates
+        rounded = gutils.round_nearest(grid_aligned, gconst.offset, gconst.multiple)
 
-def apply_square_filter(coordinates):
-    coordinate_set = set()
-    for coordinate in coordinates:
-        coordinate_set.add(tuple(coordinate))
-    x_diff, y_diff = gconst.BLOCK_X, gconst.BLOCK_Y
-    #remove points that aren't part of squares
-    filtered_coordinates = []
-    for coordinate in coordinates:
-        x, y, z = coordinate[0], coordinate[1], coordinate[2]
-        possible_squares = [[(x + x_diff, y + y_diff, z), (x + x_diff, y, z), (x, y + y_diff, z)],
-                            [(x - x_diff, y, z), (x - x_diff, y - y_diff, z), (x, y - y_diff, z)],
-                            [(x + x_diff, y, z), (x, y - y_diff, z), (x + x_diff, y - y_diff, z)],
-                            [(x - x_diff, y, z), (x, y + y_diff, z), (x - x_diff, y + y_diff, z)]]
-        for square in possible_squares:
-            square_corners = 0
-            for i in range(3):
-                for c in coordinates:
-                    if np.allclose(c, square[i]):
-                        square_corners += 1
-                        break
-            if square_corners >= 3:
-                filtered_coordinates.append(coordinate)
-    return np.array(filtered_coordinates)
+        # Finally, we removed all duplicate coordinates
+        processed_world_coordinates = gutils.unique_rows(rounded)
+
+        return processed_world_coordinates
+
+    @staticmethod
+    def push_down(processed_world_coordinates):
+        # Go downward layer by layer
+        # At each layer remove non-squares and project points to lower layers
+        layers = gutils.get_layers(processed_world_coordinates)
+        filtered_layers = []
+        for i in reversed(range(len(layers))):
+            cur_layer = GenerateSchematic.apply_square_filter_on_layer(layers[i][:, :2])
+            if len(cur_layer) != 0:
+                cur_layer = np.hstack((cur_layer, np.ones((len(cur_layer), 1)) * layers[i][0][2]))
+                filtered_layers.append(cur_layer)
+                if i > 0:
+                    layers[i-1] = np.vstack((layers[i-1], cur_layer - Z_DIFF_3D))
+
+        world_coordinates = np.vstack(filtered_layers)
+        world_coordinates = gutils.unique_rows(world_coordinates)
+
+        return world_coordinates
+
+    @staticmethod
+    def output_bottom_left_corners(world_coordinates):
+        layers_to_output = gutils.get_layers(world_coordinates)[1:]
+
+        bottom_left_corners = np.vstack(gutils.get_bottom_left_corners(layer) for layer in layers_to_output) - Z_DIFF_3D
+
+        gutils.output_corners(bottom_left_corners)
+
+        return gutils.get_corners()
+
+    def display(self):
+        fig = plt.figure(figsize=plt.figaspect(0.5))
+        ax1 = fig.add_subplot(2, 2, 1, projection='3d')
+        ax2 = fig.add_subplot(2, 2, 2, projection='3d')
+        ax3 = fig.add_subplot(2, 2, 3, projection='3d')
+        ax4 = fig.add_subplot(2, 2, 4, projection='3d')
+
+        title = "Raw world coordinates"
+        ImageMatching.scatter3d(self.raw_world_coordinates, ax1, title=title)
+        print(title, self.raw_world_coordinates)
+
+        title = "World coords before filtering"
+        ImageMatching.scatter3d(self.processed_world_coordinates, ax2, title=title)
+        print(title, self.processed_world_coordinates)
+
+        title = "World coords after processing"
+        ImageMatching.scatter3d(self.world_coordinates, ax3, title=title)
+        print(title, self.world_coordinates)
+
+        title = "Bottom left corners sent to robot"
+        ImageMatching.scatter3d(self.bottom_left_corners, ax4, title=title)
+        print(title, self.bottom_left_corners)
+
+        plt.savefig("output/world_coordinates.jpg")
+        plt.show()
+
+    # Helpers--------------------------------------------------------------------------------------
+
+    @staticmethod
+    def get_raw_world_coordinates_for_pair(n1, n2, epipolar_threshold=0.01):
+        camera1, camera2 = CameraDTO(n1), CameraDTO(n2)
+        camera2_coordinates = FeatureDetect.find_all_corners_3d(camera1, camera2, epipolar_threshold=epipolar_threshold).T
+        g02 = CameraDTO.get_g(camera2.pose)
+        camera2_coordinates = camera2_coordinates.T
+        world_coordinates = ImageMatching.apply_transform(ImageMatching.lift(camera2_coordinates), g02)[:, :3]
+        return world_coordinates
+
+    @staticmethod
+    def apply_square_filter_on_layer(coordinates):
+        """
+        Parameters
+        ----------
+        coordinates: (n, 2)-shaped np.ndarray
+
+        """
+        x_diff, y_diff = gconst.BLOCK_X, gconst.BLOCK_Y
+        #remove points that aren't part of squares
+        filtered_coordinates = []
+        for coordinate in coordinates:
+            x, y = coordinate[0], coordinate[1]
+            possible_squares = [[(x + x_diff, y + y_diff), (x + x_diff, y), (x, y + y_diff)],
+                                [(x - x_diff, y), (x - x_diff, y - y_diff), (x, y - y_diff)],
+                                [(x + x_diff, y), (x, y - y_diff), (x + x_diff, y - y_diff)],
+                                [(x - x_diff, y), (x, y + y_diff), (x - x_diff, y + y_diff)]]
+
+            for square in possible_squares:
+                square_corners = 0
+                for i in range(3):
+                    for c in coordinates:
+                        if np.allclose(c, square[i]):
+                            square_corners += 1
+                            break
+                if square_corners >= 3:
+                    filtered_coordinates.append(coordinate)
+                    break
+
+        return np.array(filtered_coordinates)
 
 
 if __name__ == "__main__":

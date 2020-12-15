@@ -5,7 +5,6 @@ import numpy as np
 
 import tf.transformations as tr
 
-from sensor_msgs.msg import CameraInfo
 from geometry_msgs.msg import (
     Pose,
     Point,
@@ -55,8 +54,7 @@ class CameraDTO:
             self.get_raw_image()
 
     def get_intrinsic_matrix(self):
-        camera_info = rospy.wait_for_message(CameraDTO.TOPIC_TEMPLATE.format(self.index % 2), CameraInfo)
-        self.intrinsic_matrix = np.reshape(camera_info.K, (3, 3))
+        self.intrinsic_matrix = gutils.input_object(gconst.KINECT_INTRINSIC_MATRIX_FILE)
 
     def get_raw_image(self):
         self.image = gutils.get_image(CameraDTO.IMAGE_SAVE_TEMPLATE.format(self.index))

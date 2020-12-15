@@ -47,4 +47,5 @@ offset = np.array([2, 0, 0])
 multiple = np.array([BLOCK_X, BLOCK_Y, BLOCK_Z])
 
 
+KINECT_INTRINSIC_MATRIX_FILE = "output/kinect_intrinsic_matrix.txt"
 CORNERS_OUTPUT_FILE = "output/schematic.txt"
