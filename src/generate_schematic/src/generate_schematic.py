@@ -30,6 +30,9 @@ class GenerateSchematic:
 
     @staticmethod
     def get_raw_world_coordinates():
+        """
+        Assumption 1: blocks are rectangular prisms
+        """
         raw_world_coordinates = []
         for i in range(len(gconst.CAMERA_DATA) // 2):
             raw_pair_coordinates = GenerateSchematic.get_raw_world_coordinates_for_pair(2 * i, 2 * i + 1)
@@ -42,6 +45,14 @@ class GenerateSchematic:
 
     @staticmethod
     def process_raw_world_coordinates(raw_world_coordinates):
+        """
+        Assumption 1: blocks are the same size
+        Assumption 2: we know our offset
+        Assumption 3: blocks are strictly aligned to multiples of their sizes, given their offset
+        Assumption 4: block orientations are axis-aligned
+        Assumption 5: all blocks have the same orientation
+        Assumption 6: we know the blocks' orientation
+        """
         # We first take only the coordinates that are grid aligned
         potential_grid_indices = gutils.close_to_multiples_of(raw_world_coordinates, gconst.multiple, gconst.offset, gconst.tolerances)
         grid_aligned = raw_world_coordinates[potential_grid_indices]
@@ -56,6 +67,12 @@ class GenerateSchematic:
 
     @staticmethod
     def push_down(processed_world_coordinates):
+        """
+        Assumption 1: blocks are the same size
+        Assumption 2: block orientations are axis-aligned
+        Assumption 3: all blocks have the same orientation
+        Assumption 4: we know the blocks' orientation
+        """
         # Go downward layer by layer
         # At each layer remove non-squares and project points to lower layers
         layers = gutils.get_layers(processed_world_coordinates)
@@ -75,9 +92,13 @@ class GenerateSchematic:
 
     @staticmethod
     def output_bottom_left_corners(world_coordinates):
+        """
+        Assumption 1: all the blocks are the same height
+        Assumption 2: all the blocks are in a convex 2D rectangle shape
+        """
         layers_to_output = gutils.get_layers(world_coordinates)[1:]
 
-        bottom_left_corners = np.vstack(gutils.get_bottom_left_corners(layer) for layer in layers_to_output) - Z_DIFF_3D
+        bottom_left_corners = np.vstack(GenerateSchematic.get_bottom_left_corners(layer) for layer in layers_to_output) - Z_DIFF_3D
 
         gutils.output_corners(bottom_left_corners)
 
@@ -150,6 +171,23 @@ class GenerateSchematic:
                     break
 
         return np.array(filtered_coordinates)
+
+    @staticmethod
+    def get_bottom_left_corners(coordinates):
+        """
+        Bottom left is defined as the min(x), min(y), min(z).d
+
+        Parameters
+        ----------
+        coordinates: (n, 3)-shaped np.ndarray
+
+        Returns
+        -------
+        bottom_left_corners: np.ndarray
+
+        """
+        max_x, max_y = np.max(coordinates[:, 0]), np.max(coordinates[:, 1])
+        return coordinates[np.ravel(np.argwhere(1 - (np.isclose(coordinates[:, 0], max_x) | np.isclose(coordinates[:, 1], max_y))))]
 
 
 if __name__ == "__main__":

@@ -97,23 +97,6 @@ def get_layers(coordinates):
     return np.array(layers)
 
 
-def get_bottom_left_corners(coordinates):
-    """
-    Bottom left is defined as the min(x), min(y), min(z).d
-
-    Parameters
-    ----------
-    coordinates: (n, 3)-shaped np.ndarray
-
-    Returns
-    -------
-    bottom_left_corners: np.ndarray
-
-    """
-    max_x, max_y = np.max(coordinates[:, 0]), np.max(coordinates[:, 1])
-    return coordinates[np.ravel(np.argwhere(1 - (np.isclose(coordinates[:, 0], max_x) | np.isclose(coordinates[:, 1], max_y))))]
-
-
 def output_object(obj, filename):
     with open(filename, "wb") as file:
         pickle.dump(obj, file)
