@@ -47,23 +47,16 @@ def create_world_with_structure(world_sim):
         square = list(square)
         square[-1] *= world_sim.block_size[2]
         world_sim.add_square_2d(*square)
-    #add first two cameras
+
+    #add first camera
     world_sim.add_camera("camera0", Pose(position = Point(0, 0, 0)))
-    world_sim.add_camera("camera1", Pose(position = Point(0, 0, 0)))
 
     camera_info = rospy.wait_for_message(camera.CameraDTO.TOPIC_TEMPLATE.format(0), CameraInfo)
     gutils.output_object(np.reshape(camera_info.K, (3, 3)), gconst.KINECT_INTRINSIC_MATRIX_FILE)
 
-    num_cameras = len(camera.CAMERAS)
-    for i in range(num_cameras / 2):
-        first_camera = "camera{}".format(i * 2)
-        second_camera = "camera{}".format(i * 2 + 1)
-
-        utils.move_camera_gazebo("camera0", camera.CAMERAS[first_camera])
-        utils.move_camera_gazebo("camera1", camera.CAMERAS[second_camera])
-
-        tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(0), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(2 * i))
-        tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(1), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(2 * i + 1))
+    for i in range(len(camera.CAMERAS)):
+        utils.move_camera_gazebo("camera0", camera.CAMERAS["camera{}".format(i)])
+        tp.saveImage(camera.CameraDTO.IMAGE_TOPIC_TEMPLATE.format(0), camera.CameraDTO.IMAGE_SAVE_TEMPLATE.format(i))
 
 
 class WorldSimulation:

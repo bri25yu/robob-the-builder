@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from itertools import product
+
 import rospy
 import cv2
 import numpy as np
@@ -18,7 +20,7 @@ Z_DIFF_3D = np.array([0, 0, gconst.BLOCK_Z])
 def main():
     gs = GenerateSchematic()
     gs.process()
-    # gs.display()
+    gs.display()
 
 
 class GenerateSchematic:
@@ -47,18 +49,25 @@ class GenerateSchematic:
     def process_raw_world_coordinates(raw_world_coordinates):
         """
         Assumption 1: blocks are the same size
-        Assumption 2: we know our offset
-        Assumption 3: blocks are strictly aligned to multiples of their sizes, given their offset
-        Assumption 4: block orientations are axis-aligned
-        Assumption 5: all blocks have the same orientation
-        Assumption 6: we know the blocks' orientation
+        Assumption 2: blocks are strictly aligned to multiples of their sizes, given their offset
+        Assumption 3: block orientations are axis-aligned
+        Assumption 4: all blocks have the same orientation
+        Assumption 5: we know the blocks' orientation
         """
         # We first take only the coordinates that are grid aligned
-        potential_grid_indices = gutils.close_to_multiples_of(raw_world_coordinates, gconst.multiple, gconst.offset, gconst.tolerances)
+        potential_grid_indices, max_length, max_offset = [], float("-inf"), None
+        x_offsets_to_try = np.arange(0, gconst.BLOCK_X, step=0.01)
+        y_offset_to_try = np.arange(0, gconst.BLOCK_Y, step=0.01)
+        for x_o, y_o in product(x_offsets_to_try, y_offset_to_try):
+            offset = np.array([x_o, y_o, 0])
+            indices = gutils.close_to_multiples_of(raw_world_coordinates, gconst.multiple, offset, gconst.tolerances)
+            if len(indices) > max_length:
+                potential_grid_indices, max_length, max_offset = indices, len(indices), offset
+
         grid_aligned = raw_world_coordinates[potential_grid_indices]
 
         # Then, we round all of our coordinates
-        rounded = gutils.round_nearest(grid_aligned, gconst.offset, gconst.multiple)
+        rounded = gutils.round_nearest(grid_aligned, max_offset, gconst.multiple)
 
         # Finally, we removed all duplicate coordinates
         processed_world_coordinates = gutils.unique_rows(rounded)

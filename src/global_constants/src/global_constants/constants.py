@@ -21,10 +21,10 @@ for delta in deltas:
         CAMERA_DATA.append([(x + delta[0] + .01, y + delta[1] + .01, z), (0 , 1.15, delta[2])])
 
 STRUCTURE_TO_BUILD = [  # Passed into WorldSimulation.add_square_2d
-    [x, y, 2, 0],
-    [x, y, 2, 1],
-    [x, y, 1, 2],
-    [x, y, 1, 3]
+    [x + .01, y + .01, 2, 0],
+    [x + .01, y + .01, 2, 1],
+    [x + .01, y + .01, 1, 2],
+    [x + .01, y + .01, 1, 3]
     # [x, y, 1, 2],
 ]
 
@@ -43,7 +43,6 @@ EXPLORATION_BLOCKS = [
 
 
 tolerances = np.array([0.01, 0.01, 0.02])
-offset = np.array([2, 0, 0])
 multiple = np.array([BLOCK_X, BLOCK_Y, BLOCK_Z])
 
 
