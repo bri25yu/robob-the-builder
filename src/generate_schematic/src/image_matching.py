@@ -6,9 +6,10 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 
 from global_constants.camera import CameraDTO
+from global_constants import utils as gutils
 
 
-bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+bf = cv2.BFMatcher(cv2.NORM_HAMMING)
 
 
 class ImageMatching:
@@ -65,6 +66,18 @@ class ImageMatching:
         img3 = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches, None, flags=2)
         plt.imshow(img3)
         plt.show()
+
+    @staticmethod
+    def draw_points(image, points, color=(255, 0, 0), save_name=None, display=True):
+        image = image.copy()
+        for px, py in points:
+            u, v = int(px), int(py)
+            image = cv2.circle(image, (u, v), radius=3, color=color, thickness=-1)
+        plt.imshow(image)
+        if save_name is not None:
+            gutils.save_image(image, save_name)
+        if display:
+            plt.show()
 
     # Helpers--------------------------------------------------------------------------------------
 

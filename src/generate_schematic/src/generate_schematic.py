@@ -144,9 +144,8 @@ class GenerateSchematic:
     @staticmethod
     def get_raw_world_coordinates_for_pair(n1, n2, epipolar_threshold=0.01):
         camera1, camera2 = CameraDTO(n1), CameraDTO(n2)
-        camera2_coordinates = FeatureDetect.find_all_corners_3d(camera1, camera2, epipolar_threshold=epipolar_threshold).T
+        camera2_coordinates = FeatureDetect.find_all_corners_3d(camera1, camera2, epipolar_threshold=epipolar_threshold)
         g02 = CameraDTO.get_g(camera2.pose)
-        camera2_coordinates = camera2_coordinates.T
         world_coordinates = ImageMatching.apply_transform(ImageMatching.lift(camera2_coordinates), g02)[:, :3]
         return world_coordinates
 
