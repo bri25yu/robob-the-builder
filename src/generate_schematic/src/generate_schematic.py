@@ -18,7 +18,7 @@ Z_DIFF_3D = np.array([0, 0, gconst.BLOCK_Z])
 def main():
     gs = GenerateSchematic()
     gs.process()
-    gs.display()
+    # gs.display()
 
 
 class GenerateSchematic:
@@ -188,6 +188,14 @@ class GenerateSchematic:
         """
         max_x, max_y = np.max(coordinates[:, 0]), np.max(coordinates[:, 1])
         return coordinates[np.ravel(np.argwhere(1 - (np.isclose(coordinates[:, 0], max_x) | np.isclose(coordinates[:, 1], max_y))))]
+
+
+class GenerateSchematicStats:
+    def __init__(self):
+        pass
+
+    def run_test(self):
+        pass
 
 
 if __name__ == "__main__":
