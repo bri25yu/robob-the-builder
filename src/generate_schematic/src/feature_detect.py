@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 
-from global_constants import utils as gutils
 from image_matching import ImageMatching
 
 
@@ -31,14 +30,26 @@ class FeatureDetect:
 
     @staticmethod
     def get_corners_harris(img, blocksize=5, sobel_constant=7, threshold=0.01):
+        """
+        Finds the corners in a color image.
+
+        Parameters
+        ----------
+        img: a (w, h, 3)-shaped np.ndarray
+
+        Returns
+        -------
+        kp: list of cv2.KeyPoint objects representing corners.
+        des: list of descriptors corresponding to those keypoints.
+
+        """
         indices = []
         for i in range(img.shape[2]):
             dst = cv2.cornerHarris(img[:, :, i], blocksize, sobel_constant, threshold)
             potential_indices = np.argwhere(dst > (0.01 * dst.max()))
             if len(potential_indices) > 0:
                 indices.append(potential_indices)
-        indices = np.vstack(indices)
-        indices = np.hstack((indices[:, 1:2], indices[:, 0:1]))
+        indices = np.vstack(indices)[:, ::-1]
 
         kp = np.hstack((indices, np.ones((len(indices), 1)) * blocksize))
         kp = [cv2.KeyPoint(*p) for p in kp]

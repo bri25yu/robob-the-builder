@@ -46,6 +46,9 @@ class ImageMatching:
 
     @staticmethod
     def scatter3d(points, ax=None, title=None):
+        """
+        Displays the given points on 3D axes.
+        """
         if ax == None:
             fig = plt.figure()
             ax = Axes3D(fig)
@@ -63,12 +66,25 @@ class ImageMatching:
 
     @staticmethod
     def draw_matches(image1, keypoints1, image2, keypoints2, matches):
+        """
+        Draws the given keypoints onto their respective images and displays them side by side.
+        """
         img3 = cv2.drawMatches(image1, keypoints1, image2, keypoints2, matches, None, flags=2)
         plt.imshow(img3)
         plt.show()
 
     @staticmethod
     def draw_points(image, points, color=(255, 0, 0), save_name=None, display=True):
+        """
+        Draws the input points on the input image.
+
+        Parameters
+        ----------
+        image: A (w, h, 3)-shaped np.ndarray
+        points: list
+            A list of points to draw on image.
+
+        """
         image = image.copy()
         for px, py in points:
             u, v = int(px), int(py)

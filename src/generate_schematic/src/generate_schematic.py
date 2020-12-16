@@ -2,8 +2,6 @@
 
 from itertools import product
 
-import rospy
-import cv2
 import numpy as np
 
 from feature_detect import FeatureDetect
@@ -180,6 +178,18 @@ class GenerateSchematic:
 
     @staticmethod
     def get_raw_world_coordinates_for_pair(n1, n2, epipolar_threshold=0.01):
+        """
+        Returns the coordinates of the corners found in the pair of cameras n1 and n2 in the
+        world frame.
+
+        Parameters
+        ----------
+        n1: int
+            Index corresponding to camera1.
+        n2: int
+            Index corresponding to camera2.
+
+        """
         camera1, camera2 = CameraDTO(n1), CameraDTO(n2)
         camera2_coordinates = FeatureDetect.find_all_corners_3d(camera1, camera2, epipolar_threshold=epipolar_threshold)
         g02 = CameraDTO.get_g(camera2.pose)
@@ -189,13 +199,15 @@ class GenerateSchematic:
     @staticmethod
     def apply_square_filter_on_layer(coordinates):
         """
+        Filters the coordinates based on whether or not they are a part of a square.
+
         Parameters
         ----------
         coordinates: (n, 2)-shaped np.ndarray
 
         """
         x_diff, y_diff = gconst.BLOCK_X, gconst.BLOCK_Y
-        #remove points that aren't part of squares
+        # Remove points that aren't part of squares
         filtered_coordinates = []
         for coordinate in coordinates:
             x, y = coordinate[0], coordinate[1]
@@ -243,6 +255,14 @@ class GenerateSchematicStats:
         pass
 
     def num_pairs_of_cameras_test(self, num_itrs=5):
+        """
+        Tests how robust the computer vision strategy is with respect to the number of camera
+        images as input.
+
+        Displays number of correct matches vs camera pairs and number of spurious matches vs
+        camera pairs.
+
+        """
         total_indices = GenerateSchematic.generate_all_camera_pair_indices()
         num_indices = list(range(len(total_indices)))
         expected_output = gutils.get_corners()
