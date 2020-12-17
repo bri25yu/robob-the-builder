@@ -113,3 +113,24 @@ def output_corners(layers, filename=const.CORNERS_OUTPUT_FILE):
 
 def get_corners(filename=const.CORNERS_OUTPUT_FILE):
     return input_object(filename)
+
+def get_robob_corners(spacing, filename=const.CORNERS_OUTPUT_FILE):
+    """
+    Returns
+    ----------
+    A 2d array of coorners, such that we only include corners with
+    z coordinate 0 (first layer), and the corners are spaced apart by
+    spacing
+    """
+    corners = input_object(filename)
+    #remove corners that aren't in the bottom layer
+    corners = np.array([c for c in corners if c[2] == 0])
+    print(corners)
+
+    #space out corners
+    min_x = min(corners[:, 0])
+    min_y = min(corners[:, 1])
+    corners = np.array([[(c[0] - min_x)/const.BLOCK_X * spacing + min_x,
+                        (c[1] - min_y)/const.BLOCK_Y * spacing + min_y,
+                        0] for c in corners])
+    return corners
