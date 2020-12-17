@@ -16,12 +16,12 @@ from global_constants import utils as gutils, constants as gconst
 Z_DIFF_3D = np.array([0, 0, gconst.BLOCK_Z])
 
 def main():
-    # gs = GenerateSchematic()
-    # gs.process()
-    # gs.display()
+    gs = GenerateSchematic()
+    gs.process()
+    gs.display()
 
-    gss = GenerateSchematicStats()
-    gss.num_pairs_of_cameras_test()
+    # gss = GenerateSchematicStats()
+    # gss.num_pairs_of_cameras_test()
 
 
 class GenerateSchematic:
@@ -80,6 +80,7 @@ class GenerateSchematic:
         Assumption 5: we know the blocks' orientation
         """
         # We first take only the coordinates that are grid aligned
+        # We find the grid axes by looping through potential offsets
         potential_grid_indices, max_length, max_offset = [], float("-inf"), None
         x_offsets_to_try = np.arange(0, gconst.BLOCK_X, step=0.01)
         y_offset_to_try = np.arange(0, gconst.BLOCK_Y, step=0.01)
@@ -285,25 +286,25 @@ class GenerateSchematicStats:
                 for corner in gs.bottom_left_corners:
                     if corner in expected_output:
                         num_corners_correct[-1] += 1
-                    else: 
+                    else:
                         num_spurious_corners[-1] += 1
 
             num_corners_correct[-1] /= num_itrs * len(expected_output)
             num_spurious_corners[-1] /= num_itrs * len(expected_output)
 
             print("Finished {} / {}".format(i + 1, len(num_pairs_of_cameras)))
-        
+
         fig, axs = plt.subplots(2)
         axs[0].plot(num_pairs_of_cameras, num_corners_correct)
-        axs[0].set_xlabel("Number of pairs of cameras")
+        axs[0].set_xlabel("Number of pairs of images")
         axs[0].set_ylabel("Percent of corners correct")
-        axs[0].set_title("Percent of corners correct vs number of pairs of cameras")
+        axs[0].set_title("Percent of corners correct vs number of pairs of images")
         axs[1].plot(num_pairs_of_cameras, num_spurious_corners)
-        axs[1].set_xlabel("Number of pairs of cameras")
+        axs[1].set_xlabel("Number of pairs of imagese")
         axs[1].set_ylabel("Ratio of spurious matches to number of expected matches")
-        axs[1].set_title("Spurious matches vs number of pairs of cameras")
+        axs[1].set_title("Spurious matches vs number of pairs of images")
 
-        plt.savefig("output/num_pairs_of_cameras_test.jpg")
+        plt.savefig("output/num_pairs_of_images_test.jpg")
         plt.show()
 
 
