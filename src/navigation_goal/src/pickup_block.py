@@ -34,7 +34,7 @@ class Planner():
 
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
-        
+
         group_name = "arm_torso"
         self.group = moveit_commander.MoveGroupCommander(group_name)
         self.group.set_planner_id("SBLkConfigDefault")
@@ -59,7 +59,7 @@ class Planner():
 
         # Subscribers
 
-        self.corners = np.vstack(utils.get_corners("/home/aatifjiwani/Documents/BerkeleySenior/EECS106A/project_workspaces/robob-the-builder/output/schematic.txt"))
+        self.corners = np.vstack(utils.get_robob_corners("/home/aatifjiwani/Documents/BerkeleySenior/EECS106A/project_workspaces/robob-the-builder/output/schematic.txt"))
         self.corners_iter = iter(self.corners)
         print(self.corners)
 
@@ -76,7 +76,7 @@ class Planner():
         # self.move_arm_to_pose(0.6, -0.033, 0.2, -np.pi/2, 0, np.pi/2, planning_time=10)
 
         # move_to_goal(Point(2.5, 9.6, 0))
-        
+
         # self.move_arm_to_pose(0.5, -0.5, 1, -np.pi/2, 0, 0)
 
 
@@ -108,7 +108,7 @@ class Planner():
 
         self.group.go(wait=True)
         self.group.stop()
-        
+
 
     def move_arm_to_pose(self, x, y, z, roll, pitch, yaw, planning_time=5):
         rospy.sleep(2)
@@ -124,7 +124,7 @@ class Planner():
         print("Attempting to move to ", x, y, z, roll, pitch, yaw)
 
         self.group.set_planning_time(planning_time)
-        
+
         self.group.set_pose_target(pose_goal)
         self.group.set_goal_position_tolerance(0.001)
 
@@ -144,7 +144,7 @@ class Planner():
         self.scene.add_box(name, box_pose, size=(w,w,h))
 
     def add_map_obstacle(self, name, x, y, z, h, w):
-        
+
         rospy.loginfo("Placing map obstacle for placed block")
         for box in self.cache_boxes:
             name, x, y, z, h, w = box
@@ -157,7 +157,7 @@ class Planner():
             box_pose.pose.orientation.w = 1
 
             self.scene.add_box(name, box_pose, size=(w,w,h))
-        
+
         rospy.loginfo("Placed")
 
     def add_cache_obstacles(self,):
@@ -254,7 +254,7 @@ class Planner():
 
         self.arm_pub.publish(arm_traj)
 
-    
+
 
     def wait_for_aruco_detection(self, direction):
         while(True):
@@ -303,7 +303,7 @@ class Planner():
         for _ in range(15):
             self.cmd_pub.publish(move)
             r.sleep()
-        
+
     def service_pickup(self, req):
         self.move_gripper(0)
         self.move_torso(1)
@@ -315,7 +315,7 @@ class Planner():
         if (abs(next_corner[1]) == 0.05):
             next_corner[1] = (next_corner[1] / 0.05) * 0.09
         next_corner[1] += 10
-        
+
         print("Moving to NEW GOAL: ", next_corner)
         world_simulation.worldsim_add_placeholder(Point(*list(next_corner)))
 
@@ -329,14 +329,14 @@ class Planner():
 
         # find the signal_aruco/pose and place the block relative to that pose
         signal_pose = rospy.wait_for_message('/signal_aruco/pose', PoseStamped, timeout=20)
-        if signal_pose.header.frame_id[0] == "/": 
+        if signal_pose.header.frame_id[0] == "/":
             signal_pose.header.frame_id = signal_pose.header.frame_id[1:]
 
         tf_signal_pose = self.transform_aruco_pose(signal_pose) # aruco marker pose w.r.t. base_footprint frame
         goal_x = tf_signal_pose.pose.position.x
         goal_y = tf_signal_pose.pose.position.y
         goal_z = 0.35
-    
+
 
         rospy.sleep(3)
         # self.add_cache_obstacles()
@@ -375,7 +375,7 @@ class Planner():
         transform_ok = False
         while not transform_ok:
             try:
-                transform = self.tfBuffer.lookup_transform("base_footprint", 
+                transform = self.tfBuffer.lookup_transform("base_footprint",
                                        ps.header.frame_id,
                                        rospy.Time(0))
                 aruco_ps = do_transform_pose(ps, transform)
@@ -390,17 +390,9 @@ class Planner():
         return aruco_ps
 
 
-    
+
 
 if __name__ == "__main__":
     rospy.init_node('tiago_joint_moveit')
     planner = Planner()
     rospy.spin()
-
-"""
-      x: 0.530766213999
-      y: 0.0503877542722
-      z: 0.34337055955
-
-
-"""
