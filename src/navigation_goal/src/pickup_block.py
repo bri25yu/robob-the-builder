@@ -58,8 +58,8 @@ class Planner():
         self.ng_init_pickup = rospy.Service("/ng_init_pickup", GoalDirection, self.initialize_pickup)
 
         # Subscribers
-
-        self.corners = np.vstack(utils.get_robob_corners("/home/aatifjiwani/Documents/BerkeleySenior/EECS106A/project_workspaces/robob-the-builder/output/schematic.txt"))
+        SPACING = 0.18
+        self.corners = np.vstack(SPACING, utils.get_robob_corners("/home/aatifjiwani/Documents/BerkeleySenior/EECS106A/project_workspaces/robob-the-builder/output/schematic.txt"))
         self.corners_iter = iter(self.corners)
         print(self.corners)
 
