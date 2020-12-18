@@ -170,6 +170,11 @@ class GenerateSchematic:
         plt.savefig("output/world_coordinates.jpg")
         plt.show()
 
+    def display_only_corners(self):
+        title = "Corners detected after processing"
+        ImageMatching.scatter3d(self.world_coordinates,  title=title)
+        plt.show()
+
     # Helpers--------------------------------------------------------------------------------------
 
     @staticmethod
