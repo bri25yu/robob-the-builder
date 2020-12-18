@@ -22,7 +22,7 @@ for i, d in enumerate(gconst.CAMERA_DATA):
 class CameraDTO:
     TOPIC_TEMPLATE = "/camera{}/color/camera_info"
     IMAGE_TOPIC_TEMPLATE = "/camera{}/color/image_raw"
-    IMAGE_SAVE_TEMPLATE = os.path.join(gconst.IMG_DIR, "camera{}_image_raw.jpg")
+    IMAGE_SAVE_TEMPLATE = os.path.join(gconst.IMG_DIR, "image{}_raw.jpg")
     CAMERA_NAME_TEMPLATE = "camera{}"
 
     def __init__(self, index, pose=None, intrinsic_matrix=None, image=None):

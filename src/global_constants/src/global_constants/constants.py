@@ -29,10 +29,10 @@ for delta in deltas:
         CAMERA_DATA.append([(x + delta[0] + .01, y + delta[1] + .01, z), (0 , pitch, delta[2])])
 
 STRUCTURE_TO_BUILD = [  # Passed into WorldSimulation.add_square_2d
-    [x + .01, y + .01, 3, 0],
-    [x + .01, y + .01, 3, 1],
-    [x + .01, y + .01, 1, 2],
-    [x + .01, y + .01, 1, 3]
+    [x, y, 3, 0],
+    [x, y, 1, 1],
+    [x, y, 1, 2]
+    # [x + .01, y + .01, 1, 3]
     # [x, y, 1, 2],
 ]
 
