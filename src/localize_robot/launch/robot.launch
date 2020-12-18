@@ -38,10 +38,6 @@
 		<arg name="extra_gazebo_args" value="$(arg extra_gazebo_args)"/>
 	</include>
 
-	<!-- <group if="$(arg gmapping)">
-		<include file="$(find localize_robot)/launch/localize_gmapping.launch">
-		</include> -->
-
   <node pkg="gmapping" type="slam_gmapping" name="slam" output="screen" >
     <remap from="scan" to="scan_raw" />
     <?ignore
@@ -57,14 +53,6 @@
 
   <node name="rviz" pkg="rviz" type="rviz"
     args="-d $(find tiago_2dnav)/config/rviz/navigation_public_sim.rviz"/> 
-<!-- 
-  <node name="map_server" pkg="map_server" type="map_server" 
-    args="$(env HOME)/.pal/tiago_maps/configurations/test_so/map.yaml"/> -->
-
-  <!-- <node name="amcl" pkg="amcl" type="amcl">
-    <param name="use_map_topic" value="true" />
-    <remap from="scan" to="scan_raw" />
-  </node> -->
 
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <rosparam file="$(find localize_robot)/parameters/costmap_common_params.yaml" command="load" ns="global_costmap" />
@@ -73,15 +61,5 @@
     <rosparam file="$(find localize_robot)/parameters/global_costmap_params.yaml" command="load"/>
     <rosparam file="$(find localize_robot)/parameters/base_local_planner_params.yaml" command="load"/>
   </node>
-
-  <!-- <node pkg="world_simulation" type="add_block.py" name="add_block" output="screen" /> -->
-
-  <!-- <node pkg="navigation_goal" type="tiago_middleman.py" name="tiago_middleman" output="screen" /> -->
-
-    <!-- pointcloud to laserscan-->
-    <!-- <include file="$(find tiago_laser_sensors)/launch/rgbd_cloud_laser.launch">
-        <arg name="cloud" value="/xtion/depth_registered/points"/>
-    </include>
-	</group> -->
 
 </launch>
