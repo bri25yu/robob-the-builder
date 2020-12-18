@@ -1,13 +1,10 @@
 #!/usr/bin/env python
-import sys
-
-import numpy as np
 
 import rospy
 import rospkg
+import numpy as np
 
-#TODO: remove MapMetaData, encode necessary info in parameter server?
-from nav_msgs.msg import OccupancyGrid, MapMetaData
+from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Point, Pose
 from navigation_goal.srv import NavGoal
 
@@ -15,8 +12,6 @@ from navigation_goal.srv import NavGoal
 Subscribe to map, map_header
 Use array to determine location to go to next
 """
-
-import matplotlib.pyplot as plt
 
 # number of points to check for unseen point
 NUM_SAMPLES = 1000
@@ -43,25 +38,7 @@ class Nav_goal:
 		x_origin = world_map.info.origin.position.x
 		y_origin = world_map.info.origin.position.y
 
-		# print("x-origin:", x_origin, "y-origin:", y_origin)
 		grid = world_map.data
-
-		# x = []
-		# y = []
-		# for r in range(rows):
-		# 	for c in range(cols):
-		# 		if grid[r * cols + c] > 70:
-		# 			y.append(c * res + x_origin - 0.06)
-		# 			# subtract block length so we don't hit the block
-		# 			x.append(r * res + y_origin)
-
-		# 			print(x[-1], y[-1])
-
-
-		# plt.scatter(x, y, color='r')
-		# # plt.heatmap(np.reshape(grid, (row, cols)))
-
-		# plt.show()
 
 		#total size: 20 y, 10 x
 		found_block = False
@@ -69,6 +46,7 @@ class Nav_goal:
 			for c in range(int((-4.5 - x_origin)//res), int((4.5 - x_origin)//res)):
 				if grid[r * cols + c] > 70:
 					self.block.x = c * res + x_origin
+
 					# subtract block length so we don't hit the block
 					self.block.y = r * res + y_origin
 
@@ -101,23 +79,15 @@ class Nav_goal:
 			self.nav_goal_service.shutdown()
 			rospy.signal_shutdown("Map is sufficiently explored.")
 
-
 	def is_in_buffer(self, x, y):
-	
 		for block_found in self.buffer:
 			x_f, y_f = block_found
-
 			if np.abs(x - x_f) < 0.1 and np.abs(y - y_f) < 0.1:
 				return True
-
-		
 
 		return False
 
 	def get_nav_goal(self, _):
-		#if self.holding_block:
-		#go to next place we wanna put the block
-		#else:
 		while (self.block.x == 0 and self.block.y == 0):
 			rospy.sleep(1)
 
@@ -126,7 +96,6 @@ class Nav_goal:
 
 def subscribe_to_map():
 	rospy.init_node('det_nav_goal_server')
-
 	rospy.sleep(10)
 
 	nav_goal = Nav_goal()
@@ -134,7 +103,6 @@ def subscribe_to_map():
 	rospy.spin()
 
 if __name__ == '__main__':
-	
 	try:
 		subscribe_to_map()
 	except rospy.ROSInterruptException:

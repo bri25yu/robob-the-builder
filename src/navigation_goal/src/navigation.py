@@ -1,19 +1,16 @@
 #!/usr/bin/env python
-import sys
-
-import numpy as np
 
 import rospy
 from rospy.rostime import Duration
 import rospkg
-
+import numpy as np
 import actionlib
 
 from std_srvs.srv import Empty
+from navigation_goal.srv import NavGoal, GoalDirection
 
 from std_msgs.msg import Float64
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from navigation_goal.srv import NavGoal, GoalDirection
 from geometry_msgs.msg import Twist, Quaternion
 
 from tf.transformations import quaternion_from_euler
@@ -55,7 +52,6 @@ def move_to_goal(goal_position, set_angle=False, returning_to_pickup=False):
     wait = client.wait_for_result(timeout=timeout)
 
     client.cancel_all_goals()
-    #TODO: handle locations we can't get to and end
     if not wait:
         rospy.logerr("Action server not available!")
         print("returning")
@@ -71,7 +67,6 @@ def get_nav_goals():
     
     rospy.wait_for_service('det_nav_goal', timeout=120)
     det_nav_goal = rospy.ServiceProxy('det_nav_goal', NavGoal, persistent=True)
-    # TODO: do a spin before moving at all
 
     done = False
     while (not done):
@@ -81,46 +76,13 @@ def get_nav_goals():
             print("returned from move to goal")
             halt_robot()
             begin_pickup(calc_angle(goal_position.position))
-            # TODO: pick up block
+
         except rospy.ServiceException as exc:
             print("Building complete.")
             done = True
             # We're done when det_nav_goal shuts down
-            # print("det_nav_goal service did not process request: " + str(exc))
-
-        # do_a_spin() # allow gmapping to see in all directions
 
     det_nav_goal.close()
-
-def do_a_spin():
-    velocity_publisher = rospy.Publisher('/mobile_base_controller/cmd_vel', Twist, queue_size=20)
-    vel_msg = Twist()
-    
-    r = rospy.Rate(20) # 10hz
-
-    vel_msg.angular.z = 2 * np.pi / NUM_SECONDS_TO_ROTATE
-    for _ in range(20*NUM_SECONDS_TO_ROTATE):
-        velocity_publisher.publish(vel_msg)
-        r.sleep()
-
-    # angular_speed = 2 * np.pi / NUM_SECONDS_TO_ROTATE
-    # vel_msg.angular.z = angular_speed
-
-    # t0 = rospy.Time.now().to_nsec()
-    # current_angle = 0
-
-    # relative_angle = 2 * np.pi # 360 degrees
-    # while (current_angle < relative_angle):
-    #     velocity_publisher.publish(vel_msg)
-    #     r.sleep()
-    #     t1 = rospy.Time.now().to_nsec()
-    #     current_angle = angular_speed * ((t1 - t0) / float(10e9))
-
-    #     print(t0, t1)
-    #     print(current_angle)
-
-    # vel_msg.angular.z = 0
-    # velocity_publisher.publish(vel_msg)
 
 def calc_angle(goal_position):
     x, y = goal_position.x, goal_position.y
@@ -138,16 +100,22 @@ def calc_angle(goal_position):
     elif (x > 0 and y <= 0):
         return -1
 
-
-
-def halt_robot():
+def rotate_robot(angular_z, time):
     velocity_publisher = rospy.Publisher('/mobile_base_controller/cmd_vel', Twist, queue_size=20)
     vel_msg = Twist()
     
     r = rospy.Rate(20) # 10hz
-    for _ in range(25):
+
+    vel_msg.angular.z = angular_z
+    for _ in range(time):
         velocity_publisher.publish(vel_msg)
         r.sleep()
+
+def do_a_spin():
+    rotate_robot(2 * np.pi / NUM_SECONDS_TO_ROTATE, 20*NUM_SECONDS_TO_ROTATE)
+
+def halt_robot():
+    rotate_robot(0, 25)
 
 def prepare_robot():
     rospy.wait_for_service('/ng_prepare')

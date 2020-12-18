@@ -39,6 +39,7 @@ def worldsim_add_placeholder(position):
     world_sim = WorldSimulation(gazebo_only=True, structure = False)
     # position.y += 0.125
     position.x += 0.55
+    position.z += 0.01
     world_sim.add_placeholder(Pose(position=position))
 
 

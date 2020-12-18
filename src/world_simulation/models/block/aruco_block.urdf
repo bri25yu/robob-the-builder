@@ -11,19 +11,19 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.03 0.03 0.3" />
+        <box size="0.03 0.03 0.4" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.03 0.03 0.3" />
+        <box size="0.03 0.03 0.4" />
       </geometry>
       <surface>
         <friction>
           <ode>
-            <mu>0.75</mu>
-            <mu2>0.75</mu2>
+            <mu>0.9</mu>
+            <mu2>0.9</mu2>
           </ode>
         </friction>
         <contact>
@@ -119,12 +119,12 @@
   <joint name="block_to_handholds_1" type="fixed">
     <parent link="block"/>
     <child link="handhold_1"/>
-    <origin xyz="0 0 0.155"/>
+    <origin xyz="0 0 0.205"/>
   </joint>
 
   <joint name="block_to_handholds_2" type="fixed">
     <parent link="block"/>
     <child link="handhold_2"/>
-    <origin xyz="0 0 -0.15"/>
+    <origin xyz="0 0 -0.20"/>
   </joint>
 </robot>

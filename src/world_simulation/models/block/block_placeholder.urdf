@@ -89,13 +89,13 @@
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_8cm_26.dae" scale="1.125 1.125 .1"/>
+        <mesh filename="package://world_simulation/models/aruco_cube/meshes/aruco_cube_8cm_26.dae" scale="1.125 1.125 .002"/>
       </geometry>
     </visual>
     <collision>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <box size="0.09 0.09 0.005" />
+        <box size="0.09 0.09 0.0001" />
       </geometry>
     </collision>
   </link>
