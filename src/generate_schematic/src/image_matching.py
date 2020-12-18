@@ -15,7 +15,7 @@ bf = cv2.BFMatcher(cv2.NORM_HAMMING)
 class ImageMatching:
 
     @staticmethod
-    def match_2_cameras_images(camera1, camera2, kp1, des1, kp2, des2, epipolar_threshold=0.11):
+    def match_2_cameras_images(camera1, camera2, kp1, des1, kp2, des2, epipolar_threshold=0.01):
         """
         Parameters
         ----------
