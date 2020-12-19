@@ -46,7 +46,7 @@ class Planner():
         self.ng_init_pickup = rospy.Service("/ng_init_pickup", GoalDirection, self.initialize_pickup)
 
         SPACING = 0.18
-        self.corners = np.vstack(SPACING, utils.get_robob_corners("/home/aatifjiwani/Documents/BerkeleySenior/EECS106A/project_workspaces/robob-the-builder/output/schematic.txt"))
+        self.corners = np.vstack(utils.get_robob_corners(SPACING, "/home/aatifjiwani/Documents/BerkeleySenior/EECS106A/project_workspaces/robob-the-builder/output/schematic.txt"))
         self.corners_iter = iter(self.corners)
 
         self.corners_iter = iter(self.corners)
@@ -66,19 +66,6 @@ class Planner():
 
         self.joints = self.group.get_joints()[:-1]
         print("Joint names: ", self.joints)
-
-    def move_arm_to_states(self,):
-        targets = [0.05, 0.20, -1.34, -0.20, 1.94, -1.57, 1.37, 0.0]
-        print("Attempting to move to ", targets)
-
-        for joint_name, target_state in zip(self.joints, targets):
-            print("Setting {} to {}".format(joint_name, target_state))
-            self.group.set_joint_value_target(joint_name, target_state)
-
-        self.group.set_planning_time(5.0)
-
-        self.group.go(wait=True)
-        self.group.stop()
 
     def move_arm_to_pose(self, x, y, z, roll, pitch, yaw, planning_time=5):
         rospy.sleep(2)
